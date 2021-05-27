@@ -1,8 +1,6 @@
 import { GetServerSideProps, NextPage } from "next";
 import { Credentials, S3 } from "aws-sdk";
 import Link from "next/link";
-import getConfig from "next/config";
-const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 
 interface Props {
   region: string;
