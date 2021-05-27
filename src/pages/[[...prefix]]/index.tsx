@@ -1,6 +1,8 @@
-import { NextPage } from "next";
+import { GetServerSideProps, NextPage } from "next";
 import { Credentials, S3 } from "aws-sdk";
 import Link from "next/link";
+import getConfig from "next/config";
+const { serverRuntimeConfig, publicRuntimeConfig } = getConfig();
 
 interface Props {
   region: string;
@@ -13,7 +15,7 @@ interface Props {
   contents: Array<{
     Key: string;
     label: string;
-    LastModified: Date;
+    LastModified: string;
     Size: number;
   }>;
 }
@@ -32,6 +34,7 @@ const Index: NextPage<Props> = ({
       <thead>
         <tr>
           <th align="left">Name</th>
+          <th align="left">Last modified</th>
           <th align="right">Size</th>
         </tr>
       </thead>
@@ -40,6 +43,7 @@ const Index: NextPage<Props> = ({
           <td>
             <Link href="/..">..</Link>
           </td>
+          <td>-</td>
           <td align="right">-</td>
         </tr>
       )}
@@ -48,6 +52,7 @@ const Index: NextPage<Props> = ({
           <td>
             <Link href={`/${e.prefix}`}>{e.label}</Link>
           </td>
+          <td>-</td>
           <td align="right">-</td>
         </tr>
       ))}
@@ -58,6 +63,7 @@ const Index: NextPage<Props> = ({
               {e.label}
             </a>
           </td>
+          <td>{new Date(e.LastModified).toLocaleString()}</td>
           <td align="right">{e.Size}</td>
         </tr>
       ))}
@@ -65,7 +71,9 @@ const Index: NextPage<Props> = ({
   </>
 );
 
-Index.getInitialProps = async (context): Promise<Props> => {
+export const getServerSideProps: GetServerSideProps<Props> = async (
+  context
+) => {
   const region = process.env.S3_REGION;
   const Bucket = process.env.S3_BUCKET;
   const s3 = new S3({
@@ -90,22 +98,24 @@ Index.getInitialProps = async (context): Promise<Props> => {
     .promise();
 
   return {
-    region,
-    bucket: Bucket,
-    prefix,
-    prefixes:
-      CommonPrefixes?.map((e) => ({
-        label: e.Prefix?.slice(prefix.length) ?? "",
-        prefix: e.Prefix!,
-      })) ?? [],
-    contents:
-      Contents?.filter((e) => e.Key != null).map((e) => ({
-        ...e,
-        Key: e.Key!,
-        LastModified: e.LastModified!,
-        Size: e.Size ?? 0,
-        label: e.Key?.slice(prefix.length) ?? "",
-      })) ?? [],
+    props: {
+      region,
+      bucket: Bucket,
+      prefix,
+      prefixes:
+        CommonPrefixes?.map((e) => ({
+          label: e.Prefix?.slice(prefix.length) ?? "",
+          prefix: e.Prefix!,
+        })) ?? [],
+      contents:
+        Contents?.filter((e) => e.Key != null).map((e) => ({
+          ...e,
+          Key: e.Key!,
+          LastModified: e.LastModified!.toISOString(),
+          Size: e.Size ?? 0,
+          label: e.Key?.slice(prefix.length) ?? "",
+        })) ?? [],
+    },
   };
 };
 
