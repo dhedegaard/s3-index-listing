@@ -26,7 +26,7 @@ const Index: NextPage<Props> = ({
   contents,
 }) => (
   <>
-    <h1>Prefix: {prefix}</h1>
+    <h1>{prefix === "" ? "Root" : <>Prefix: {prefix}</>}</h1>
     <hr />
     <table>
       <thead>
