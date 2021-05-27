@@ -79,7 +79,6 @@ Index.getInitialProps = async (context): Promise<Props> => {
   const rawPrefix = (context.query.prefix as string[]) ?? [];
   const joinedPrefix = rawPrefix.join("/");
   const prefix = joinedPrefix.length < 2 ? "" : joinedPrefix + "/";
-  console.log("PREFIX:", prefix);
 
   const { CommonPrefixes, Contents } = await s3
     .listObjectsV2({
@@ -89,7 +88,6 @@ Index.getInitialProps = async (context): Promise<Props> => {
       Prefix: prefix,
     })
     .promise();
-  console.log({ CommonPrefixes, Contents });
 
   return {
     region,
