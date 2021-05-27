@@ -28,7 +28,7 @@ const Index: NextPage<Props> = ({
   <>
     <h1>{prefix === "" ? "Root" : <>Prefix: {prefix}</>}</h1>
     <hr />
-    <table>
+    <table cellSpacing="5">
       <thead>
         <tr>
           <th align="left">Name</th>
@@ -62,7 +62,7 @@ const Index: NextPage<Props> = ({
             </a>
           </td>
           <td>{new Date(e.LastModified).toLocaleString()}</td>
-          <td align="right">{e.Size}</td>
+          <td align="right">{e.Size.toLocaleString()}</td>
         </tr>
       ))}
     </table>
