@@ -72,13 +72,13 @@ const Index: NextPage<Props> = ({
 export const getServerSideProps: GetServerSideProps<Props> = async (
   context
 ) => {
-  const region = process.env.S3_REGION;
-  const Bucket = process.env.S3_BUCKET;
+  const region = process.env.S3_REGION!;
+  const Bucket = process.env.S3_BUCKET!;
   const s3 = new S3({
     region,
     credentials: new Credentials({
-      accessKeyId: process.env.ACCESS_KEY,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY,
+      accessKeyId: process.env.ACCESS_KEY!,
+      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
     }),
   });
 
@@ -95,7 +95,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (
     })
     .promise();
 
-  if (CommonPrefixes.length === 0 && Contents.length === 0) {
+  if (
+    (CommonPrefixes == null || CommonPrefixes.length === 0) &&
+    (Contents == null || Contents.length === 0)
+  ) {
     return { notFound: true };
   }
 
