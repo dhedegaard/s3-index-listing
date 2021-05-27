@@ -97,6 +97,10 @@ export const getServerSideProps: GetServerSideProps<Props> = async (
     })
     .promise();
 
+  if (CommonPrefixes.length === 0 && Contents.length === 0) {
+    return { notFound: true };
+  }
+
   return {
     props: {
       region,
