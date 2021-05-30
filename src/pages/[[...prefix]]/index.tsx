@@ -1,6 +1,21 @@
 import { GetServerSideProps, NextPage } from "next";
 import { Credentials, S3 } from "aws-sdk";
 import Link from "next/link";
+import styled from "styled-components";
+
+const Container = styled.div`
+  margin: 0 auto;
+  max-width: 1024px;
+  padding: 0 8px;
+`;
+
+const NameTd = styled.td`
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 200px;
+  max-width: 200px;
+  text-align: left;
+`;
 
 interface Props {
   region: string;
@@ -25,48 +40,48 @@ const Index: NextPage<Props> = ({
   prefixes,
   contents,
 }) => (
-  <>
+  <Container>
     <h1>{prefix === "" ? "Root" : <>Prefix: {prefix}</>}</h1>
     <hr />
     <table cellSpacing="5">
       <thead>
         <tr>
-          <th align="left">Name</th>
+          <NameTd>Name</NameTd>
           <th align="left">Last modified</th>
           <th align="right">Size</th>
         </tr>
       </thead>
       {prefix !== "" && (
         <tr>
-          <td>
+          <NameTd>
             <Link href="/..">..</Link>
-          </td>
-          <td>-</td>
-          <td align="right">-</td>
+          </NameTd>
+          <td></td>
+          <td align="right"></td>
         </tr>
       )}
       {prefixes.map((e) => (
         <tr key={`prefix-${e}`}>
-          <td>
+          <NameTd>
             <Link href={`/${e.prefix}`}>{e.label}</Link>
-          </td>
-          <td>-</td>
-          <td align="right">-</td>
+          </NameTd>
+          <td></td>
+          <td align="right"></td>
         </tr>
       ))}
       {contents.map((e) => (
         <tr key={`content-${e.Key}`}>
-          <td>
+          <NameTd>
             <a href={`https://s3-${region}.amazonaws.com/${bucket}/${e.Key}`}>
               {e.label}
             </a>
-          </td>
+          </NameTd>
           <td>{new Date(e.LastModified).toLocaleString()}</td>
           <td align="right">{e.Size.toLocaleString()}</td>
         </tr>
       ))}
     </table>
-  </>
+  </Container>
 );
 
 export const getServerSideProps: GetServerSideProps<Props> = async (
