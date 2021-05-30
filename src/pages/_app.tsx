@@ -1,4 +1,3 @@
-import { Head } from "next/document";
 import { createGlobalStyle, ThemeProvider } from "styled-components";
 
 const GlobalStyle = createGlobalStyle`
