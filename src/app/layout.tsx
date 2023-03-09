@@ -4,6 +4,7 @@ import "../styles/global.css";
 
 export const metadata: Metadata = {
   title: "S3 Index",
+  description: "Public files from an S3 bucket",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
