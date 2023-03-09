@@ -15,22 +15,6 @@ const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
   );
 });
 
-interface Props {
-  region: string;
-  bucket: string;
-  prefix: string;
-  prefixes: Array<{
-    prefix: string;
-    label: string;
-  }>;
-  contents: Array<{
-    Key: string;
-    label: string;
-    LastModified: string;
-    Size: number;
-  }>;
-}
-
 export default function Index({
   params,
 }: {
@@ -92,9 +76,24 @@ export default function Index({
   );
 }
 
+interface BucketContentResponse {
+  region: string;
+  bucket: string;
+  prefix: string;
+  prefixes: Array<{
+    prefix: string;
+    label: string;
+  }>;
+  contents: Array<{
+    Key: string;
+    label: string;
+    LastModified: string;
+    Size: number;
+  }>;
+}
 const getBucketContent = async (
   pathname: string
-): Promise<Props | undefined> => {
+): Promise<BucketContentResponse | undefined> => {
   const region = process.env.S3_REGION!;
   const Bucket = process.env.S3_BUCKET!;
   const s3 = new S3({
