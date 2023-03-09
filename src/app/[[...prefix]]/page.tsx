@@ -3,6 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HTMLProps, memo, use } from "react";
 
+// Cache for 10 minutes.
+export const revalidate = 600;
+
 const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
   return (
     <td
