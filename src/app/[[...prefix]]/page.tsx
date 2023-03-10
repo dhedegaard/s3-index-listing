@@ -10,7 +10,7 @@ const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
   return (
     <td
       {...props}
-      className="overflow-hidden overflow-ellipsis w-[200px] max-w-[200px] text-left"
+      className="overflow-hidden overflow-ellipsis w-full text-left"
     />
   );
 });
@@ -34,7 +34,9 @@ export default function Index({
         <thead>
           <tr>
             <NameTd>Name</NameTd>
-            <th align="left">Last modified</th>
+            <th className="whitespace-nowrap" align="left">
+              Last modified
+            </th>
             <th align="right">Size</th>
           </tr>
         </thead>
@@ -66,8 +68,12 @@ export default function Index({
                   {e.label}
                 </a>
               </NameTd>
-              <td>{new Date(e.LastModified).toLocaleString()}</td>
-              <td align="right">{e.Size.toLocaleString()}</td>
+              <td className="whitespace-nowrap">
+                {new Date(e.LastModified).toLocaleString()}
+              </td>
+              <td className="whitespace-nowrap" align="right">
+                {e.Size.toLocaleString()}
+              </td>
             </tr>
           ))}
         </tbody>
