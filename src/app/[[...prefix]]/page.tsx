@@ -1,4 +1,4 @@
-import { Credentials, S3 } from "aws-sdk";
+import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HTMLProps, memo, use } from "react";
@@ -102,24 +102,24 @@ const getBucketContent = async (
 ): Promise<BucketContentResponse | undefined> => {
   const region = process.env.S3_REGION!;
   const Bucket = process.env.S3_BUCKET!;
-  const s3 = new S3({
+  const s3 = new S3Client({
     region,
-    credentials: new Credentials({
+    credentials: {
       accessKeyId: process.env.ACCESS_KEY!,
       secretAccessKey: process.env.SECRET_ACCESS_KEY!,
-    }),
+    },
   });
 
   const prefix = pathname.length < 2 ? "" : pathname + "/";
 
-  const { CommonPrefixes, Contents } = await s3
-    .listObjectsV2({
+  const { CommonPrefixes, Contents } = await s3.send(
+    new ListObjectsV2Command({
       Bucket,
       MaxKeys: 1_000,
       Delimiter: "/",
       Prefix: prefix,
     })
-    .promise();
+  );
 
   if (
     (CommonPrefixes == null || CommonPrefixes.length === 0) &&
