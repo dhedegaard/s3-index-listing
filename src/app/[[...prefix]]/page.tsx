@@ -2,6 +2,7 @@ import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HTMLProps, memo, use } from "react";
+import { SERVER_ENV } from "../../server-env";
 
 // Cache for 10 minutes.
 export const revalidate = 600;
@@ -99,13 +100,13 @@ interface BucketContentResponse {
 const getBucketContent = async (
   pathname: string
 ): Promise<BucketContentResponse | undefined> => {
-  const region = process.env.S3_REGION!;
-  const Bucket = process.env.S3_BUCKET!;
+  const region = SERVER_ENV.S3_REGION!;
+  const Bucket = SERVER_ENV.S3_BUCKET!;
   const s3 = new S3Client({
     region,
     credentials: {
-      accessKeyId: process.env.ACCESS_KEY!,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+      accessKeyId: SERVER_ENV.ACCESS_KEY!,
+      secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY!,
     },
   });
 
