@@ -1,7 +1,6 @@
 {
   "name": "s3-index-listing",
   "version": "1.0.0",
-  "main": "index.js",
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
@@ -10,22 +9,22 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.454.0",
-    "@aws-sdk/signature-v4-crt": "^3.310.0",
-    "@aws-sdk/signature-v4-multi-region": "^3.310.0",
-    "next": "^13.3.1",
+    "@aws-sdk/client-s3": "^3.490.0",
+    "@aws-sdk/signature-v4-crt": "^3.489.0",
+    "@aws-sdk/signature-v4-multi-region": "^3.489.0",
+    "next": "^14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@types/node": "18",
-    "@types/react": "^18.0.38",
-    "@types/react-dom": "^18.0.11",
-    "autoprefixer": "^10.4.14",
-    "eslint": "8.39.0",
-    "eslint-config-next": "13.3.1",
-    "postcss": "^8.4.31",
-    "tailwindcss": "^3.3.1",
-    "typescript": "^5.0.4"
+    "@types/node": "20.11.2",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "autoprefixer": "^10.4.16",
+    "eslint": "8.56.0",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8.4.33",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3"
   }
 }
