@@ -1,8 +1,22 @@
 import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
+import { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { HTMLProps, memo, use } from "react";
+import { HTMLProps, memo, use, useMemo } from "react";
+import { SERVER_ENV } from "../../server-env";
 
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const parentTitle = (await parent).title?.absolute ?? "";
+
+  return {
+    title: `${parentTitle} - ${
+      Array.isArray(params.prefix) ? `/${params.prefix?.join("/")}` : "Root"
+    }`,
+  };
+}
 // Cache for 10 minutes.
 export const revalidate = 600;
 
@@ -15,16 +29,23 @@ const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
   );
 });
 
-export default function Index({
-  params,
-}: {
+interface Props {
   params: { prefix: undefined | string[] };
-}) {
+}
+export default function Index({ params }: Readonly<Props>) {
   const data = use(getBucketContent(params.prefix?.join("/") ?? "/"));
   if (!data) {
     notFound();
   }
   const { region, bucket, prefix, prefixes, contents } = data;
+
+  const parentPrefix = useMemo(() => {
+    if (prefix === "") {
+      return null;
+    }
+    const parts = prefix.split("/").filter((e) => e !== "");
+    return `/${parts.slice(0, parts.length - 1).join("/")}`;
+  }, [prefix]);
 
   return (
     <main className="mx-auto max-w-5xl px-2">
@@ -41,10 +62,10 @@ export default function Index({
           </tr>
         </thead>
         <tbody>
-          {prefix !== "" && (
+          {typeof parentPrefix === "string" && (
             <tr>
               <NameTd>
-                <Link href="/..">..</Link>
+                <Link href={parentPrefix}>..</Link>
               </NameTd>
               <td></td>
               <td align="right"></td>
@@ -100,13 +121,13 @@ interface BucketContentResponse {
 const getBucketContent = async (
   pathname: string
 ): Promise<BucketContentResponse | undefined> => {
-  const region = process.env.S3_REGION!;
-  const Bucket = process.env.S3_BUCKET!;
+  const region = SERVER_ENV.S3_REGION;
+  const Bucket = SERVER_ENV.S3_BUCKET;
   const s3 = new S3Client({
     region,
     credentials: {
-      accessKeyId: process.env.ACCESS_KEY!,
-      secretAccessKey: process.env.SECRET_ACCESS_KEY!,
+      accessKeyId: SERVER_ENV.ACCESS_KEY,
+      secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY,
     },
   });
 
