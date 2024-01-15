@@ -1,9 +1,22 @@
 import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
+import { Metadata, ResolvingMetadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { HTMLProps, memo, use } from "react";
+import { HTMLProps, memo, use, useMemo } from "react";
 import { SERVER_ENV } from "../../server-env";
 
+export async function generateMetadata(
+  { params }: Props,
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const parentTitle = (await parent).title?.absolute ?? "";
+
+  return {
+    title: `${parentTitle} - ${
+      Array.isArray(params.prefix) ? `/${params.prefix?.join("/")}` : "Root"
+    }`,
+  };
+}
 // Cache for 10 minutes.
 export const revalidate = 600;
 

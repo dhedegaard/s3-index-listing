@@ -16,7 +16,6 @@ export default function RootLayout({ children }: Readonly<Props>) {
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
-        <title>S3 Index</title>
       </head>
       <body>{children}</body>
     </html>
