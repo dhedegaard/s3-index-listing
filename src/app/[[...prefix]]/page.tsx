@@ -15,11 +15,10 @@ const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
   );
 });
 
-export default function Index({
-  params,
-}: {
+interface Props {
   params: { prefix: undefined | string[] };
-}) {
+}
+export default function Index({ params }: Readonly<Props>) {
   const data = use(getBucketContent(params.prefix?.join("/") ?? "/"));
   if (!data) {
     notFound();

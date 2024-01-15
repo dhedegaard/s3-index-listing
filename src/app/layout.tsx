@@ -7,7 +7,11 @@ export const metadata: Metadata = {
   description: "Public files from an S3 bucket",
 };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+interface Props {
+  children: ReactNode;
+}
+
+export default function RootLayout({ children }: Readonly<Props>) {
   return (
     <html lang="en">
       <head>
