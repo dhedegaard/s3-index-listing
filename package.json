@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "next dev",
+    "dev": "next dev",
     "export": "next export",
     "build": "next build",
     "lint": "next lint"
