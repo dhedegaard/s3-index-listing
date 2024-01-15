@@ -1,55 +1,50 @@
-import { ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
-import { Metadata, ResolvingMetadata } from "next";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { HTMLProps, memo, use, useMemo } from "react";
-import { SERVER_ENV } from "../../server-env";
+import { ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
+import { Metadata, ResolvingMetadata } from 'next'
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { HTMLProps, memo, use, useMemo } from 'react'
+import { SERVER_ENV } from '../../server-env'
 
 export async function generateMetadata(
   { params }: Props,
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const parentTitle = (await parent).title?.absolute ?? "";
+  const parentTitle = (await parent).title?.absolute ?? ''
 
   return {
     title: `${parentTitle} - ${
-      Array.isArray(params.prefix) ? `/${params.prefix?.join("/")}` : "Root"
+      Array.isArray(params.prefix) ? `/${params.prefix?.join('/')}` : 'Root'
     }`,
-  };
+  }
 }
 // Cache for 10 minutes.
-export const revalidate = 600;
+export const revalidate = 600
 
 const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
-  return (
-    <td
-      {...props}
-      className="overflow-hidden overflow-ellipsis w-full text-left"
-    />
-  );
-});
+  return <td {...props} className="overflow-hidden overflow-ellipsis w-full text-left" />
+})
 
 interface Props {
-  params: { prefix: undefined | string[] };
+  params: { prefix: undefined | string[] }
 }
 export default function Index({ params }: Readonly<Props>) {
-  const data = use(getBucketContent(params.prefix?.join("/") ?? "/"));
+  const data = use(getBucketContent(params.prefix?.join('/') ?? '/'))
   if (!data) {
-    notFound();
+    notFound()
   }
-  const { region, bucket, prefix, prefixes, contents } = data;
+  const { region, bucket, prefix, prefixes, contents } = data
 
   const parentPrefix = useMemo(() => {
-    if (prefix === "") {
-      return null;
+    if (prefix === '') {
+      return null
     }
-    const parts = prefix.split("/").filter((e) => e !== "");
-    return `/${parts.slice(0, parts.length - 1).join("/")}`;
-  }, [prefix]);
+    const parts = prefix.split('/').filter((e) => e !== '')
+    return `/${parts.slice(0, parts.length - 1).join('/')}`
+  }, [prefix])
 
   return (
     <main className="mx-auto max-w-5xl px-2">
-      <h1>{prefix === "" ? "Root" : <>Prefix: {prefix}</>}</h1>
+      <h1>{prefix === '' ? 'Root' : <>Prefix: {prefix}</>}</h1>
       <hr />
       <table cellSpacing="5">
         <thead>
@@ -62,7 +57,7 @@ export default function Index({ params }: Readonly<Props>) {
           </tr>
         </thead>
         <tbody>
-          {typeof parentPrefix === "string" && (
+          {typeof parentPrefix === 'string' && (
             <tr>
               <NameTd>
                 <Link href={parentPrefix}>..</Link>
@@ -83,15 +78,9 @@ export default function Index({ params }: Readonly<Props>) {
           {contents.map((e) => (
             <tr key={`content-${e.Key}`}>
               <NameTd>
-                <a
-                  href={`https://s3-${region}.amazonaws.com/${bucket}/${e.Key}`}
-                >
-                  {e.label}
-                </a>
+                <a href={`https://s3-${region}.amazonaws.com/${bucket}/${e.Key}`}>{e.label}</a>
               </NameTd>
-              <td className="whitespace-nowrap">
-                {new Date(e.LastModified).toLocaleString()}
-              </td>
+              <td className="whitespace-nowrap">{new Date(e.LastModified).toLocaleString()}</td>
               <td className="whitespace-nowrap" align="right">
                 {e.Size.toLocaleString()}
               </td>
@@ -100,53 +89,51 @@ export default function Index({ params }: Readonly<Props>) {
         </tbody>
       </table>
     </main>
-  );
+  )
 }
 
 interface BucketContentResponse {
-  region: string;
-  bucket: string;
-  prefix: string;
+  region: string
+  bucket: string
+  prefix: string
   prefixes: Array<{
-    prefix: string;
-    label: string;
-  }>;
+    prefix: string
+    label: string
+  }>
   contents: Array<{
-    Key: string;
-    label: string;
-    LastModified: string;
-    Size: number;
-  }>;
+    Key: string
+    label: string
+    LastModified: string
+    Size: number
+  }>
 }
-const getBucketContent = async (
-  pathname: string
-): Promise<BucketContentResponse | undefined> => {
-  const region = SERVER_ENV.S3_REGION;
-  const Bucket = SERVER_ENV.S3_BUCKET;
+const getBucketContent = async (pathname: string): Promise<BucketContentResponse | undefined> => {
+  const region = SERVER_ENV.S3_REGION
+  const Bucket = SERVER_ENV.S3_BUCKET
   const s3 = new S3Client({
     region,
     credentials: {
       accessKeyId: SERVER_ENV.ACCESS_KEY,
       secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY,
     },
-  });
+  })
 
-  const prefix = pathname.length < 2 ? "" : pathname + "/";
+  const prefix = pathname.length < 2 ? '' : pathname + '/'
 
   const { CommonPrefixes, Contents } = await s3.send(
     new ListObjectsV2Command({
       Bucket,
       MaxKeys: 1_000,
-      Delimiter: "/",
+      Delimiter: '/',
       Prefix: prefix,
     })
-  );
+  )
 
   if (
     (CommonPrefixes == null || CommonPrefixes.length === 0) &&
     (Contents == null || Contents.length === 0)
   ) {
-    return undefined;
+    return undefined
   }
 
   return {
@@ -155,7 +142,7 @@ const getBucketContent = async (
     prefix,
     prefixes:
       CommonPrefixes?.map((e) => ({
-        label: e.Prefix?.slice(prefix.length) ?? "",
+        label: e.Prefix?.slice(prefix.length) ?? '',
         prefix: e.Prefix!,
       })) ?? [],
     contents:
@@ -164,7 +151,7 @@ const getBucketContent = async (
         Key: e.Key!,
         LastModified: e.LastModified!.toISOString(),
         Size: e.Size ?? 0,
-        label: e.Key?.slice(prefix.length) ?? "",
+        label: e.Key?.slice(prefix.length) ?? '',
       })) ?? [],
-  };
-};
+  }
+}

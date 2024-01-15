@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 const serverEnvSchema = z.object({
   /** @example `eu-west-1` */
@@ -15,9 +15,7 @@ const serverEnvSchema = z.object({
    * IAM secret access key, with permissions to the bucket.
    */
   SECRET_ACCESS_KEY: z.string().min(1),
-});
+})
 export const SERVER_ENV = serverEnvSchema.parse(
-  Object.fromEntries(
-    Object.keys(serverEnvSchema.shape).map((key) => [key, process.env[key]])
-  )
-);
+  Object.fromEntries(Object.keys(serverEnvSchema.shape).map((key) => [key, process.env[key]]))
+)
