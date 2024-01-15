@@ -39,6 +39,14 @@ export default function Index({ params }: Readonly<Props>) {
   }
   const { region, bucket, prefix, prefixes, contents } = data;
 
+  const parentPrefix = useMemo(() => {
+    if (prefix === "") {
+      return null;
+    }
+    const parts = prefix.split("/").filter((e) => e !== "");
+    return `/${parts.slice(0, parts.length - 1).join("/")}`;
+  }, [prefix]);
+
   return (
     <main className="mx-auto max-w-5xl px-2">
       <h1>{prefix === "" ? "Root" : <>Prefix: {prefix}</>}</h1>
@@ -54,10 +62,10 @@ export default function Index({ params }: Readonly<Props>) {
           </tr>
         </thead>
         <tbody>
-          {prefix !== "" && (
+          {typeof parentPrefix === "string" && (
             <tr>
               <NameTd>
-                <Link href="/..">..</Link>
+                <Link href={parentPrefix}>..</Link>
               </NameTd>
               <td></td>
               <td align="right"></td>
