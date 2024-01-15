@@ -100,13 +100,13 @@ interface BucketContentResponse {
 const getBucketContent = async (
   pathname: string
 ): Promise<BucketContentResponse | undefined> => {
-  const region = SERVER_ENV.S3_REGION!;
-  const Bucket = SERVER_ENV.S3_BUCKET!;
+  const region = SERVER_ENV.S3_REGION;
+  const Bucket = SERVER_ENV.S3_BUCKET;
   const s3 = new S3Client({
     region,
     credentials: {
-      accessKeyId: SERVER_ENV.ACCESS_KEY!,
-      secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY!,
+      accessKeyId: SERVER_ENV.ACCESS_KEY,
+      secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY,
     },
   });
 
