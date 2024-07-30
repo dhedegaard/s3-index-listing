@@ -14,13 +14,13 @@ export async function generateMetadata(
     title: `${parentTitle} - ${
       Array.isArray(params.prefix) ? `/${params.prefix?.join('/')}` : 'Root'
     }`,
-  }
+  } satisfies Metadata
 }
 // Cache for 10 minutes.
 export const revalidate = 600
 
 const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
-  return <td {...props} className="overflow-hidden overflow-ellipsis w-full text-left" />
+  return <td {...props} className="w-full overflow-hidden text-ellipsis text-left" />
 })
 
 interface Props {
