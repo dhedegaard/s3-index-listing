@@ -4,10 +4,8 @@ import { RedirectType, notFound, redirect } from 'next/navigation'
 import { HTMLProps, memo, use, useMemo } from 'react'
 import { BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 
-export async function generateMetadata(
-  { params }: Props,
-  parent: ResolvingMetadata
-): Promise<Metadata> {
+export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
+  const params = await props.params;
   const parentTitle = (await parent).title?.absolute ?? ''
 
   return {
@@ -24,9 +22,10 @@ const NameTd = memo(function NameTd(props: HTMLProps<HTMLTableCellElement>) {
 })
 
 interface Props {
-  params: { prefix: undefined | string[] }
+  params: Promise<{ prefix: undefined | string[] }>
 }
-export default function Index({ params }: Readonly<Props>) {
+export default function Index(props: Readonly<Props>) {
+  const params = use(props.params);
   const data = use(getBucketContent(params.prefix?.join('/') ?? '/'))
   if (data.type === 'not-found') {
     notFound()
