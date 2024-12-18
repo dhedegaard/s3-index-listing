@@ -9,7 +9,8 @@
     "dev": "next dev --turbopack",
     "export": "next export",
     "build": "next build",
-    "lint": "next lint"
+    "lint": "next lint",
+    "start": "next start"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.714.0",
