@@ -66,7 +66,7 @@ const ContentRow = memo<{ content: BucketContentResponse['contents'][number] }>(
           <a href={`/${content.Key}`}>{content.label}</a>
         </NameTd>
         <td className="whitespace-nowrap">
-          {useMemo(() => new Date(content.LastModified).toLocaleString(), [])}
+          {useMemo(() => new Date(content.LastModified).toLocaleString(), [content.LastModified])}
         </td>
         <td className="whitespace-nowrap" align="right">
           {content.Size.toLocaleString()}
