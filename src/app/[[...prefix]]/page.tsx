@@ -4,8 +4,10 @@ import { RedirectType, notFound, redirect } from 'next/navigation'
 import { HTMLProps, memo, use, useMemo } from 'react'
 import { BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 
+export const runtime = 'edge'
+
 export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
-  const params = await props.params;
+  const params = await props.params
   const parentTitle = (await parent).title?.absolute ?? ''
 
   return {
@@ -25,7 +27,7 @@ interface Props {
   params: Promise<{ prefix: undefined | string[] }>
 }
 export default function Index(props: Readonly<Props>) {
-  const params = use(props.params);
+  const params = use(props.params)
   const data = use(getBucketContent(params.prefix?.join('/') ?? '/'))
   if (data.type === 'not-found') {
     notFound()
@@ -78,7 +80,9 @@ const PrefixRenderer = memo<BucketContentResponse>(function PrefixRenderer({
           {prefixes.map((e) => (
             <tr key={`prefix-${e.prefix}`}>
               <NameTd>
-                <Link href={`/${e.prefix}`}>{e.label}</Link>
+                <Link prefetch={false} href={`/${e.prefix}`}>
+                  {e.label}
+                </Link>
               </NameTd>
               <td></td>
               <td align="right"></td>
