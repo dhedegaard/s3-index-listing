@@ -1,5 +1,6 @@
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { cache } from 'react'
 import { SERVER_ENV } from '../server-env'
 
 export interface BucketContentResponse {
@@ -28,9 +29,9 @@ export interface BucketContentNotFoundResponse {
   type: 'not-found'
 }
 
-export const getBucketContent = async (
+export const getBucketContent = cache(async function getBucketContent(
   pathname: string
-): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> => {
+): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
   const region = SERVER_ENV.S3_REGION
   const Bucket = SERVER_ENV.S3_BUCKET
   const s3 = new S3Client({
@@ -87,4 +88,4 @@ export const getBucketContent = async (
 
   // Explicit 404 case.
   return { type: 'not-found' } satisfies BucketContentNotFoundResponse
-}
+})
