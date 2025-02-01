@@ -1,4 +1,5 @@
 import { Metadata, ResolvingMetadata } from 'next'
+import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { RedirectType, notFound, redirect } from 'next/navigation'
 import { memo, use, useMemo } from 'react'
@@ -22,9 +23,16 @@ export const revalidate = 1800
 interface Props {
   params: Promise<{ prefix: undefined | string[] }>
 }
+
+const cachedGetBucketContent = unstable_cache(
+  (prefix: Awaited<Props['params']>['prefix'] | undefined) =>
+    getBucketContent(prefix?.join('/') ?? '/'),
+  ['list-bucket-by-params-from-page'],
+  { revalidate: 3600 }
+)
 export default function Index(props: Readonly<Props>) {
   const params = use(props.params)
-  const data = use(getBucketContent(params.prefix?.join('/') ?? '/'))
+  const data = use(cachedGetBucketContent(params.prefix))
   if (data.type === 'not-found') {
     notFound()
   }
