@@ -5,8 +5,6 @@ import { memo, use, useMemo } from 'react'
 import { BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { NameTd } from '../../components/name-td'
 
-export const runtime = 'edge'
-
 export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
   const params = await props.params
   const parentTitle = (await parent).title?.absolute ?? ''
@@ -17,8 +15,9 @@ export async function generateMetadata(props: Props, parent: ResolvingMetadata):
     }`,
   } satisfies Metadata
 }
-// Cache for 10 minutes.
-export const revalidate = 600
+
+// Cache for 30 minutes.
+export const revalidate = 1800
 
 interface Props {
   params: Promise<{ prefix: undefined | string[] }>
