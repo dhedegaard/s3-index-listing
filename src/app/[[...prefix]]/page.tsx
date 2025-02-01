@@ -16,9 +16,6 @@ export async function generateMetadata(props: Props, parent: ResolvingMetadata):
   } satisfies Metadata
 }
 
-// Cache for 30 minutes.
-export const revalidate = 1800
-
 interface Props {
   params: Promise<{ prefix: undefined | string[] }>
 }

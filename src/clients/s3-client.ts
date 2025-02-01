@@ -1,5 +1,6 @@
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { cacheLife } from 'next/dist/server/use-cache/cache-life'
 import { cache } from 'react'
 import { SERVER_ENV } from '../server-env'
 
@@ -32,6 +33,9 @@ export interface BucketContentNotFoundResponse {
 export const getBucketContent = cache(async function getBucketContent(
   pathname: string
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
+  'use cache'
+  cacheLife('hours')
+
   const region = SERVER_ENV.S3_REGION
   const Bucket = SERVER_ENV.S3_BUCKET
   const s3 = new S3Client({
