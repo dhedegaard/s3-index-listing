@@ -19,6 +19,7 @@ export async function generateMetadata(props: Props, parent: ResolvingMetadata):
 
 // Cache for 30 minutes.
 export const revalidate = 1800
+export const runtime = 'edge'
 
 interface Props {
   params: Promise<{ prefix: undefined | string[] }>
