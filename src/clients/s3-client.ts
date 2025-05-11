@@ -1,5 +1,6 @@
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
+import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
 import { SERVER_ENV } from '../server-env'
 
@@ -8,16 +9,8 @@ export interface BucketContentResponse {
   region: string
   bucket: string
   prefix: string
-  prefixes: Array<{
-    prefix: string
-    label: string
-  }>
-  contents: Array<{
-    Key: string
-    label: string
-    LastModified: string
-    Size: number
-  }>
+  prefixes: Array<{ prefix: string; label: string }>
+  contents: Array<{ Key: string; label: string; LastModified: string; Size: number }>
 }
 
 export interface BucketContentObjectResponse {
@@ -44,14 +37,12 @@ export const getBucketContent = cache(async function getBucketContent(
 
   const prefix = pathname.length < 2 ? '' : pathname + '/'
 
-  const { CommonPrefixes, Contents, $metadata } = await s3.send(
-    new ListObjectsV2Command({
-      Bucket,
-      MaxKeys: 1_000,
-      Delimiter: '/',
-      Prefix: prefix,
-    })
-  )
+  const { CommonPrefixes, Contents, $metadata } = await unstable_cache(
+    () =>
+      s3.send(new ListObjectsV2Command({ Bucket, MaxKeys: 1000, Delimiter: '/', Prefix: prefix })),
+    ['s3-list-objects-v2', Bucket, prefix],
+    { revalidate: 3600 }
+  )()
 
   if (
     (CommonPrefixes != null && CommonPrefixes.length > 0) ||
