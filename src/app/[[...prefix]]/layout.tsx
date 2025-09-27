@@ -3,9 +3,8 @@ import { use, useMemo, type ReactNode } from 'react'
 import { z } from 'zod'
 import { NameTd } from '../../components/name-td'
 
-interface Props {
+interface Props extends LayoutProps<'/[[...prefix]]'> {
   children: ReactNode
-  params: Promise<{ prefix: undefined | string[] }>
 }
 
 const Params = z.object({
