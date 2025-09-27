@@ -3,7 +3,7 @@ import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { RedirectType, notFound, redirect } from 'next/navigation'
 import { memo, use, useMemo } from 'react'
-import { BucketContentResponse, getBucketContent } from '../../clients/s3-client'
+import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { NameTd } from '../../components/name-td'
 
 export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
@@ -19,7 +19,6 @@ export async function generateMetadata(props: Props, parent: ResolvingMetadata):
 
 // Cache for 30 minutes.
 export const revalidate = 1800
-export const runtime = 'edge'
 
 interface Props {
   params: Promise<{ prefix: undefined | string[] }>
