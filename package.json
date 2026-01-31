@@ -4,7 +4,7 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "24"
   },
   "scripts": {
     "dev": "next dev --turbopack",
@@ -14,31 +14,31 @@
     "start": "next start"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.896.0",
-    "@aws-sdk/s3-request-presigner": "^3.896.0",
-    "@aws-sdk/signature-v4-crt": "^3.896.0",
-    "@aws-sdk/signature-v4-multi-region": "^3.896.0",
+    "@aws-sdk/client-s3": "^3.980.0",
+    "@aws-sdk/s3-request-presigner": "^3.980.0",
+    "@aws-sdk/signature-v4-crt": "^3.980.0",
+    "@aws-sdk/signature-v4-multi-region": "^3.980.0",
     "next": "16.1.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "zod": "^4.1.11"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
-    "@tsconfig/next": "^2.0.3",
-    "@tsconfig/strictest": "^2.0.6",
-    "@types/node": "22.15.17",
+    "@tsconfig/next": "^2.0.5",
+    "@tsconfig/strictest": "^2.0.8",
+    "@types/node": "25.1.0",
     "@types/react": "19.2.10",
     "@types/react-dom": "19.2.3",
-    "autoprefixer": "^10.4.21",
-    "eslint": "9.36.0",
+    "autoprefixer": "^10.4.24",
+    "eslint": "9.39.2",
     "eslint-config-next": "16.1.6",
     "eslint-plugin-tailwindcss": "^3.18.2",
     "postcss": "^8.5.6",
-    "prettier": "^3.6.2",
-    "prettier-plugin-tailwindcss": "^0.6.14",
+    "prettier": "^3.8.1",
+    "prettier-plugin-tailwindcss": "^0.7.2",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.3"
   },
   "overrides": {
     "@types/react": "19.2.10",
