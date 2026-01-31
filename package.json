@@ -10,7 +10,7 @@
     "dev": "next dev --turbopack",
     "export": "next export",
     "build": "next build",
-    "lint": "next lint",
+    "lint": "eslint .",
     "start": "next start"
   },
   "dependencies": {
@@ -24,6 +24,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
     "@tsconfig/next": "^2.0.3",
     "@tsconfig/strictest": "^2.0.6",
     "@types/node": "22.15.17",
