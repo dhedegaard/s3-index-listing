@@ -53,7 +53,7 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
             {typeof parentPrefix === 'string' && (
               <tr>
                 <NameTd>
-                  <Link prefetch={false} href={parentPrefix}>
+                  <Link prefetch={false} href={parentPrefix} className="text-blue-800">
                     ..
                   </Link>
                 </NameTd>
