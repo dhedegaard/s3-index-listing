@@ -14,21 +14,21 @@
     "start": "next start"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.995.0",
-    "@aws-sdk/s3-request-presigner": "^3.995.0",
-    "@aws-sdk/signature-v4-crt": "^3.995.0",
-    "@aws-sdk/signature-v4-multi-region": "^3.995.0",
+    "@aws-sdk/client-s3": "^3.1000.0",
+    "@aws-sdk/s3-request-presigner": "^3.1000.0",
+    "@aws-sdk/signature-v4-crt": "^3.1000.0",
+    "@aws-sdk/signature-v4-multi-region": "^3.996.3",
     "next": "16.1.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.3",
-    "@tailwindcss/postcss": "^4.2.0",
-    "@tsconfig/next": "^2.0.5",
+    "@eslint/eslintrc": "^3.3.4",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@tsconfig/next": "^2.0.6",
     "@tsconfig/strictest": "^2.0.8",
-    "@types/node": "25.3.0",
+    "@types/node": "25.3.2",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "eslint": "^9.39.3",
@@ -37,7 +37,7 @@
     "postcss": "^8.5.6",
     "prettier": "^3.8.1",
     "prettier-plugin-tailwindcss": "^0.7.2",
-    "tailwindcss": "^4.2.0",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   },
   "overrides": {
