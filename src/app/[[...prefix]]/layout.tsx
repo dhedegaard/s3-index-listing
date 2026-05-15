@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { use, useMemo, type ReactNode } from 'react'
+import { use, type ReactNode } from 'react'
 import * as z from 'zod'
 import { NameTd } from '../../components/name-td'
 
@@ -16,20 +16,15 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
     unresolvedParams.then(async (params) => await Params.safeParseAsync(params))
   )
 
-  const parentPrefix = useMemo(() => {
-    if (
-      !paramsResult.success ||
-      paramsResult.data.prefix == null ||
-      paramsResult.data.prefix.length === 0
-    ) {
-      return null
-    }
-
-    return `/${paramsResult.data.prefix
-      .slice(0, -1)
-      .map((part) => encodeURIComponent(part))
-      .join('/')}`
-  }, [paramsResult])
+  const parentPrefix =
+    !paramsResult.success ||
+    paramsResult.data.prefix == null ||
+    paramsResult.data.prefix.length === 0
+      ? null
+      : `/${paramsResult.data.prefix
+          .slice(0, -1)
+          .map((part) => encodeURIComponent(part))
+          .join('/')}`
 
   if (!paramsResult.success) {
     throw paramsResult.error
