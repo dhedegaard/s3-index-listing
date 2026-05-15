@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import * as z from 'zod'
 
 const serverEnvSchema = z.object({
   /** @example `eu-west-1` */

@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { use, useMemo, type ReactNode } from 'react'
-import { z } from 'zod'
+import * as z from 'zod'
 import { NameTd } from '../../components/name-td'
 
 interface Props extends LayoutProps<'/[[...prefix]]'> {
