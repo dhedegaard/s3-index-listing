@@ -1,14 +1,13 @@
 import { Metadata, ResolvingMetadata } from 'next'
-import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { RedirectType, notFound, redirect } from 'next/navigation'
-import { memo, use, useMemo } from 'react'
+import { memo, use } from 'react'
 import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { NameTd } from '../../components/name-td'
 
 export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
-  const params = await props.params
-  const parentTitle = (await parent).title?.absolute ?? ''
+  const [params, resolvedParent] = await Promise.all([props.params, parent])
+  const parentTitle = resolvedParent.title?.absolute ?? ''
 
   return {
     title: `${parentTitle} - ${
@@ -24,15 +23,9 @@ interface Props {
   params: Promise<{ prefix: undefined | string[] }>
 }
 
-const cachedGetBucketContent = unstable_cache(
-  (prefix: Awaited<Props['params']>['prefix'] | undefined) =>
-    getBucketContent(prefix?.join('/') ?? '/'),
-  ['list-bucket-by-params-from-page'],
-  { revalidate: 3600 }
-)
 export default function Index(props: Readonly<Props>) {
   const params = use(props.params)
-  const data = use(cachedGetBucketContent(params.prefix))
+  const data = use(getBucketContent(params.prefix?.join('/') ?? '/'))
   if (data.type === 'not-found') {
     notFound()
   }
@@ -73,7 +66,7 @@ const ContentRow = memo<{ content: BucketContentResponse['contents'][number] }>(
           <a href={`/${content.Key}`} className='text-blue-800'>{content.label}</a>
         </NameTd>
         <td className="whitespace-nowrap">
-          {useMemo(() => new Date(content.LastModified).toLocaleString(), [content.LastModified])}
+          {new Date(content.LastModified).toLocaleString()}
         </td>
         <td className="whitespace-nowrap" align="right">
           {content.Size.toLocaleString()}
