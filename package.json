@@ -14,10 +14,10 @@
     "start": "next start"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1045.0",
-    "@aws-sdk/s3-request-presigner": "^3.1045.0",
-    "@aws-sdk/signature-v4-crt": "^3.1045.0",
-    "@aws-sdk/signature-v4-multi-region": "^3.996.25",
+    "@aws-sdk/client-s3": "^3.1047.0",
+    "@aws-sdk/s3-request-presigner": "^3.1047.0",
+    "@aws-sdk/signature-v4-crt": "^3.1047.0",
+    "@aws-sdk/signature-v4-multi-region": "^3.996.26",
     "next": "16.2.6",
     "react": "19.2.6",
     "react-dom": "19.2.6",
@@ -28,7 +28,7 @@
     "@tailwindcss/postcss": "^4.3.0",
     "@tsconfig/next": "^2.0.6",
     "@tsconfig/strictest": "^2.0.8",
-    "@types/node": "25.6.2",
+    "@types/node": "25.8.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "eslint": "^9.39.3",
