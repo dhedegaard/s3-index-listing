@@ -62,7 +62,7 @@ export const getBucketContent = cache(async function getBucketContent(
         Contents?.filter((e) => e.Key != null).map((e) => ({
           ...e,
           Key: e.Key!,
-          LastModified: e.LastModified!.toISOString(),
+          LastModified: new Date(e.LastModified!).toISOString(),
           Size: e.Size ?? 0,
           label: e.Key?.slice(prefix.length) ?? '',
         })) ?? [],
