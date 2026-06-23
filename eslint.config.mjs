@@ -27,6 +27,9 @@ const eslintConfig = defineConfig([
     'build/**',
     'next-env.d.ts',
     'src/codegen/**',
+    // Config files aren't part of the TypeScript project, so the type-aware
+    // rules can't parse them.
+    '*.config.mjs',
   ]),
 ])
 
