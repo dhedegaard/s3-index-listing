@@ -56,13 +56,13 @@ export const getBucketContent = cache(async function getBucketContent(
       prefixes:
         CommonPrefixes?.map((e) => ({
           label: e.Prefix?.slice(prefix.length) ?? '',
-          prefix: e.Prefix!,
+          prefix: e.Prefix ?? '',
         })) ?? [],
       contents:
         Contents?.filter((e) => e.Key != null).map((e) => ({
           ...e,
-          Key: e.Key!,
-          LastModified: new Date(e.LastModified!).toISOString(),
+          Key: e.Key ?? '',
+          LastModified: new Date(e.LastModified ?? 0).toISOString(),
           Size: e.Size ?? 0,
           label: e.Key?.slice(prefix.length) ?? '',
         })) ?? [],
