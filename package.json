@@ -18,9 +18,9 @@
     "@aws-sdk/s3-request-presigner": "^3.1047.0",
     "@aws-sdk/signature-v4-crt": "^3.1047.0",
     "@aws-sdk/signature-v4-multi-region": "^3.996.26",
-    "next": "16.2.6",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -29,11 +29,11 @@
     "@tsconfig/next": "^2.0.6",
     "@tsconfig/strictest": "^2.0.8",
     "@types/node": "25.8.0",
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.3",
-    "eslint-config-next": "16.2.6",
+    "eslint-config-next": "16.2.9",
     "eslint-config-prettier": "^10.1.8",
     "postcss": "^8.5.14",
     "prettier": "^3.8.3",
@@ -42,7 +42,7 @@
     "typescript": "^6.0.3"
   },
   "overrides": {
-    "@types/react": "19.2.14",
+    "@types/react": "19.2.17",
     "@types/react-dom": "19.2.3"
   }
 }
