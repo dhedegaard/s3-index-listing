@@ -18,7 +18,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1097.0",
     "@aws-sdk/signature-v4-crt": "^3.1097.0",
     "@aws-sdk/signature-v4-multi-region": "^3.996.42",
-    "next": "16.3.5",
+    "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.4.3"
@@ -33,7 +33,7 @@
     "@types/react-dom": "19.3.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.5",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "16.3.8",
     "eslint-config-prettier": "^10.1.8",
     "postcss": "^8.5.25",
     "prettier": "^3.9.6",
