@@ -14,7 +14,7 @@ npm run build    # production build
 npm run lint     # ESLint (next + prettier)
 ```
 
-No test suite exists.
+No test suite exists. `npm run export` is dead (`next export` was removed in Next 14); don't use it.
 
 ## Environment variables
 
