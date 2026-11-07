@@ -10,13 +10,22 @@ interface ListedObject {
   Size: number
 }
 
+interface PrefixEntry {
+  prefix: string
+  label: string
+}
+
+interface ContentEntry extends ListedObject {
+  label: string
+}
+
 export interface BucketContentResponse {
   type: 'prefix-response'
   region: string
   bucket: string
   prefix: string
-  prefixes: Array<{ prefix: string; label: string }>
-  contents: Array<ListedObject & { label: string }>
+  prefixes: PrefixEntry[]
+  contents: ContentEntry[]
 }
 
 export interface BucketContentObjectResponse {
@@ -44,37 +53,35 @@ interface Listing {
 
 // LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
 // Only a JSON-safe projection is cached, so its type matches what comes back out of the cache.
-const listPrefix = cache(
-  unstable_cache(
-    async (prefix: string): Promise<Listing> => {
-      const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
-        new ListObjectsV2Command({
-          Bucket: SERVER_ENV.S3_BUCKET,
-          MaxKeys: 1000,
-          Delimiter: '/',
-          Prefix: prefix,
-        })
-      )
-      return {
-        prefixes: CommonPrefixes?.flatMap((e) => (e.Prefix == null ? [] : [e.Prefix])) ?? [],
-        objects:
-          Contents?.flatMap((e) =>
-            e.Key == null
-              ? []
-              : [
-                  {
-                    Key: e.Key,
-                    LastModified: new Date(e.LastModified ?? 0).toISOString(),
-                    Size: e.Size ?? 0,
-                  },
-                ]
-          ) ?? [],
-        isTruncated: IsTruncated === true,
-      } satisfies Listing
-    },
-    ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET],
-    { revalidate: 3600 }
-  )
+const listPrefix = unstable_cache(
+  async (prefix: string): Promise<Listing> => {
+    const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: SERVER_ENV.S3_BUCKET,
+        MaxKeys: 1000,
+        Delimiter: '/',
+        Prefix: prefix,
+      })
+    )
+    return {
+      prefixes: CommonPrefixes?.flatMap((e) => (e.Prefix == null ? [] : [e.Prefix])) ?? [],
+      objects:
+        Contents?.flatMap((e) =>
+          e.Key == null
+            ? []
+            : [
+                {
+                  Key: e.Key,
+                  LastModified: new Date(e.LastModified ?? 0).toISOString(),
+                  Size: e.Size ?? 0,
+                } satisfies ListedObject,
+              ]
+        ) ?? [],
+      isTruncated: IsTruncated === true,
+    } satisfies Listing
+  },
+  ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET],
+  { revalidate: 3600 }
 )
 
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
@@ -108,7 +115,9 @@ async function getEntryKind(segments: readonly string[]): Promise<EntryKind> {
 export const getBucketContent = cache(async function getBucketContent(
   path: string
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
-  const kind = await getEntryKind(path === '' ? [] : path.split('/'))
+  const prefix = path === '' ? '' : path + '/'
+  // The trailing '/' leaves an empty last element; dropping it also gives [] for the root.
+  const kind = await getEntryKind(prefix.split('/').slice(0, -1))
   if (kind === 'missing') {
     return { type: 'not-found' } satisfies BucketContentNotFoundResponse
   }
@@ -116,7 +125,6 @@ export const getBucketContent = cache(async function getBucketContent(
     return await getObjectResponse(path)
   }
 
-  const prefix = path === '' ? '' : path + '/'
   const { prefixes, objects } = await listPrefix(prefix)
   if (prefixes.length > 0 || objects.length > 0) {
     return {
@@ -124,8 +132,12 @@ export const getBucketContent = cache(async function getBucketContent(
       region: SERVER_ENV.S3_REGION,
       bucket: SERVER_ENV.S3_BUCKET,
       prefix,
-      prefixes: prefixes.map((e) => ({ prefix: e, label: e.slice(prefix.length) })),
-      contents: objects.map((e) => ({ ...e, label: e.Key.slice(prefix.length) })),
+      prefixes: prefixes.map(
+        (e) => ({ prefix: e, label: e.slice(prefix.length) }) satisfies PrefixEntry
+      ),
+      contents: objects.map(
+        (e) => ({ ...e, label: e.Key.slice(prefix.length) }) satisfies ContentEntry
+      ),
     } satisfies BucketContentResponse
   }
 
