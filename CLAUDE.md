@@ -18,7 +18,7 @@ npx tsc --noEmit # typecheck (no script for it)
 No test suite exists.
 
 - Build without real credentials: `S3_REGION=eu-west-1 S3_BUCKET=x ACCESS_KEY=x SECRET_ACCESS_KEY=x npm run build`.
-- Verify against the real bucket: `direnv exec . npx next dev --turbopack -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
+- Verify against the real bucket with a production build: `direnv exec . npm run build && direnv exec . npx next start -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
 - Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s.
 - `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
 
