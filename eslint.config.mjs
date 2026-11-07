@@ -12,6 +12,15 @@ const eslintConfig = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-empty-object-type': 'off',
+      // Namespace-only zod imports let bundlers tree-shake it and keep its locales out.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "ImportDeclaration[source.value='zod'] > :matches(ImportSpecifier, ImportDefaultSpecifier)",
+          message: "Import zod as a namespace: `import * as z from 'zod'`.",
+        },
+      ],
     },
     languageOptions: {
       parserOptions: {

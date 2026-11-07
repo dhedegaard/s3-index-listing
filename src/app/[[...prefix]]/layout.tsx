@@ -7,14 +7,15 @@ interface Props extends LayoutProps<'/[[...prefix]]'> {
   children: ReactNode
 }
 
-const Params = z.object({
-  prefix: z.optional(z.array(z.string().min(1)).readonly()),
-})
+// Compiled: parsed on every request.
+const Params = z.compile(
+  z.object({
+    prefix: z.optional(z.array(z.string().min(1)).readonly()),
+  })
+)
 
 export default function IndexLayout({ children, params: unresolvedParams }: Props) {
-  const paramsResult = use(
-    unresolvedParams.then(async (params) => await Params.safeParseAsync(params))
-  )
+  const paramsResult = Params.safeParse(use(unresolvedParams))
 
   const parentPrefix =
     !paramsResult.success ||

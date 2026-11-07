@@ -1,6 +1,6 @@
 import * as z from 'zod'
 
-const serverEnvSchema = z.object({
+const ServerEnv = z.object({
   /** @example `eu-west-1` */
   S3_REGION: z.string().min(1),
   /** @example `s3-bucket-name */
@@ -16,6 +16,6 @@ const serverEnvSchema = z.object({
    */
   SECRET_ACCESS_KEY: z.string().min(1),
 })
-export const SERVER_ENV = serverEnvSchema.parse(
-  Object.fromEntries(Object.keys(serverEnvSchema.shape).map((key) => [key, process.env[key]]))
+export const SERVER_ENV = ServerEnv.parse(
+  Object.fromEntries(Object.keys(ServerEnv.shape).map((key) => [key, process.env[key]]))
 )
