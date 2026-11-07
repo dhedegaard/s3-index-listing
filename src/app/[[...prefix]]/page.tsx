@@ -4,6 +4,7 @@ import { memo, use } from 'react'
 import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
+import { keyHref } from '../../key-href'
 
 export async function generateMetadata(
   props: PageProps<'/[[...prefix]]'>,
@@ -39,7 +40,7 @@ const PrefixRenderer = memo<BucketContentResponse>(function PrefixRenderer({ pre
       {prefixes.map((prefix) => (
         <tr key={`prefix-${prefix.prefix}`}>
           <NameTd>
-            <FolderLink href={`/${prefix.prefix}`}>{prefix.label}</FolderLink>
+            <FolderLink prefix={prefix.prefix}>{prefix.label}</FolderLink>
           </NameTd>
           <td></td>
           <td align="right"></td>
@@ -57,7 +58,7 @@ const ContentRow = memo<{ content: BucketContentResponse['contents'][number] }>(
     return (
       <tr>
         <NameTd>
-          <a href={`/${content.Key}`} className="text-blue-800">
+          <a href={keyHref(content.Key)} className="text-blue-800">
             {content.label}
           </a>
         </NameTd>

@@ -22,10 +22,7 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
     paramsResult.data.prefix == null ||
     paramsResult.data.prefix.length === 0
       ? null
-      : `/${paramsResult.data.prefix
-          .slice(0, -1)
-          .map((part) => encodeURIComponent(part))
-          .join('/')}`
+      : paramsResult.data.prefix.slice(0, -1).join('/')
 
   if (!paramsResult.success) {
     throw paramsResult.error
@@ -49,7 +46,7 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
             {typeof parentPrefix === 'string' && (
               <tr>
                 <NameTd>
-                  <FolderLink href={parentPrefix}>..</FolderLink>
+                  <FolderLink prefix={parentPrefix}>..</FolderLink>
                 </NameTd>
                 <td></td>
                 <td align="right"></td>
