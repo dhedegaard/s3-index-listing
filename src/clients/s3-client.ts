@@ -2,13 +2,15 @@ import { GetObjectCommand, ListObjectsV2Command, S3Client } from '@aws-sdk/clien
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
+import * as z from 'zod'
 import { SERVER_ENV } from '../server-env'
 
-interface ListedObject {
-  Key: string
-  LastModified: string
-  Size: number
-}
+const listedObjectSchema = z.object({
+  Key: z.string(),
+  LastModified: z.iso.datetime(),
+  Size: z.number().int().nonnegative(),
+})
+interface ListedObject extends z.infer<typeof listedObjectSchema> {}
 
 interface PrefixEntry {
   prefix: string
@@ -45,15 +47,20 @@ const s3 = new S3Client({
   },
 })
 
-interface Listing {
-  prefixes: string[]
-  objects: ListedObject[]
-  isTruncated: boolean
-}
+// Compiled: parsed on every listing read, several times per request.
+const listingSchema = z.compile(
+  z.object({
+    prefixes: z.array(z.string()),
+    objects: z.array(listedObjectSchema),
+    isTruncated: z.boolean(),
+  })
+)
+interface Listing extends z.infer<typeof listingSchema> {}
 
 // LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
-// Only a JSON-safe projection is cached, so its type matches what comes back out of the cache.
-const listPrefix = unstable_cache(
+// Only a JSON-safe projection is cached; it's parsed on the way out, since the data cache is a
+// runtime boundary.
+const listPrefixCached = unstable_cache(
   async (prefix: string): Promise<Listing> => {
     const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
       new ListObjectsV2Command({
@@ -83,6 +90,10 @@ const listPrefix = unstable_cache(
   ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET],
   { revalidate: 3600 }
 )
+
+async function listPrefix(prefix: string): Promise<Listing> {
+  return listingSchema.parse(await listPrefixCached(prefix))
+}
 
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
 

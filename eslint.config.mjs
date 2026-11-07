@@ -12,6 +12,24 @@ const eslintConfig = defineConfig([
   {
     rules: {
       '@typescript-eslint/no-empty-object-type': 'off',
+      // Namespace-only zod imports let bundlers tree-shake it and keep its locales out.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            'ImportDeclaration[source.value=/^zod(\\/(mini|v4|v4\\/mini))?$/] > :matches(ImportSpecifier, ImportDefaultSpecifier)',
+          message: "Import zod as a namespace: `import * as z from 'zod'`.",
+        },
+        {
+          selector: "ImportDeclaration[source.value='zod/locales']",
+          message: 'Import a single locale from `zod/v4/locales/<lang>.js` instead.',
+        },
+        {
+          selector: "MemberExpression[object.name='z'][property.name=/^(core|locales)$/]",
+          message:
+            "Runtime `z.core`/`z.locales` access pulls in every locale; import from 'zod/v4/core' instead.",
+        },
+      ],
     },
     languageOptions: {
       parserOptions: {
