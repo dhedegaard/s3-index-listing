@@ -2,7 +2,7 @@ import { use, type ReactNode } from 'react'
 import * as z from 'zod'
 import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
-import { displaySegments } from '../../key-path'
+import { decodeSegments } from '../../key-path'
 
 interface Props extends LayoutProps<'/[[...prefix]]'> {
   children: ReactNode
@@ -21,8 +21,13 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
   if (!paramsResult.success) {
     throw paramsResult.error
   }
-  const prefix = displaySegments(paramsResult.data.prefix)
-  const parentPrefix = prefix.length === 0 ? null : prefix.slice(0, -1).join('/')
+  const rawPrefix = paramsResult.data.prefix ?? []
+  const decoded = decodeSegments(rawPrefix)
+  // The page 404s params that don't decode. The heading shows them raw, and `..` goes to the root,
+  // since re-encoding raw segments would escape their '%' a second time.
+  const prefix = decoded ?? rawPrefix
+  const parentPrefix =
+    rawPrefix.length === 0 ? null : decoded == null ? '' : decoded.slice(0, -1).join('/')
 
   return (
     <main className="mx-auto max-w-5xl px-2">

@@ -55,9 +55,9 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - `ListObjectsV2` is billed as an S3 Tier 1 request. Any change that makes one LIST per distinct URL lets bots and scanners drive up the AWS bill.
 - `listPrefix(prefix)` is the only place that lists (`Delimiter: '/'`, one page of 1000). It's wrapped in `unstable_cache` (1h) and caches a JSON-safe projection rather than the SDK output. Reads are checked with the compiled `Listing.validate`; an entry that fails is treated as a miss.
 - Bump `LISTING_CACHE_VERSION` when the `Listing` schema or `fetchListing`'s output changes: Next keys the cache on the callback's source, not on what it calls, so old entries would otherwise be served (or cost an uncached LIST each) until they expire.
-- `getBucketContent` checks each path segment against its parent's cached listing, so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
+- `getBucketContent` checks each path segment against its parent's cached listing (`resolveEntry`), so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
 - Known limits: new uploads 404 until the parent listing refreshes (≤1h); under a truncated parent (>1000 entries) a path is "unknown" and costs its own LIST, then falls back to a presigned URL.
-- Next leaves route params percent-encoded (`g%C3%A5tur.png`); `decodeSegments` (`src/key-path.ts`) decodes them once, and 404s a malformed escape or a decoded `/` (`%2F`), so each key has exactly one URL.
+- Next leaves route params percent-encoded (`g%C3%A5tur.png`); `decodeSegments` (`src/key-path.ts`) decodes them once, and 404s a malformed escape, a decoded `/` (`%2F`) or a control character. The walk matches names NFC/NFD-insensitively (`findKey`) and uses the stored key from then on.
 - Keys with a hidden segment (`HIDDEN_NAMES`: `.git`, `.env*`, `.htaccess`, …, case-insensitive) are dropped from the cached listings and 404 before any lookup, so uploads don't leak repo history or secrets.
 
 ### Environment validation (`src/server-env.ts`)

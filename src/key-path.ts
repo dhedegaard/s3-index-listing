@@ -4,13 +4,13 @@ export const keyHref = (key: string): string =>
 
 /**
  * The inverse of `keyHref` for route params, which Next leaves percent-encoded (`g%C3%A5tur.png`).
- * Returns null for a malformed escape, or a decoded '/' (`%2F`), which would let two URLs name one
- * key.
+ * Returns null for a malformed escape, a decoded '/' (`%2F`), which would let two URLs name one key,
+ * or a control character (`%00`), which no real key has.
  */
 export function decodeSegments(segments: readonly string[]): string[] | null {
   try {
     const decoded = segments.map((segment) => decodeURIComponent(segment))
-    return decoded.some((segment) => segment.includes('/')) ? null : decoded
+    return decoded.some((segment) => /[/\p{Cc}]/u.test(segment)) ? null : decoded
   } catch {
     return null
   }
