@@ -19,11 +19,11 @@ No test suite exists.
 
 - Build without real credentials: `S3_REGION=eu-west-1 S3_BUCKET=x ACCESS_KEY=x SECRET_ACCESS_KEY=x npm run build`.
 - Verify against the real bucket with a production build: `direnv exec . npm run build && direnv exec . npx next start -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
-- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingLabel` (`useLinkStatus`) instead; render folder links with `FolderLink`, which carries it and `prefetch={false}`, and build key URLs with `keyHref`, which encodes each segment (its inverse is `decodeSegments`).
-- `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
+- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingLabel` instead (see Links below).
+- `next dev` writes a gitignored `AGENTS.md` that only points at the bundled Next 16 docs (`node_modules/next/dist/docs/`), the source of truth for Next APIs here; this file is the project's instructions.
 - Vercel project is `p.dhedegaard.dk` (team `d-hedegaard`); the repo has no `.vercel/` link. Hobby keeps request logs 1h and Observability queries need Pro; the app logs nothing, so MCP runtime logs are empty — read requests with `vercel logs --scope d-hedegaard -p p.dhedegaard.dk --since 1h --json`.
 - Test `PendingLabel` in headless Chromium against `next start`: delay requests with header `rsc: 1` via Playwright `page.route` to make a navigation slow. Next strips trailing slashes from hrefs (`/bold`, not `/bold/`), so select links accordingly.
-- Run Prettier on the files you touched, not all of `src/`: `name-td.tsx` isn't formatted with the Tailwind plugin, and a blanket run adds an unrelated diff.
+- Check formatting with `npx prettier --check src`; lint doesn't enforce it.
 - Inspect the bucket ad hoc with a scratch `.cjs` script using the repo's `@aws-sdk/client-s3` (see the `NODE_PATH` tip in `~/.claude/CLAUDE.md`); a full flat listing costs 1 LIST per 1000 keys (currently 1).
 
 ## Environment variables
@@ -46,7 +46,7 @@ Locally these are set via `.envrc` (direnv).
 Every URL path is handled by the single catch-all route `src/app/[[...prefix]]/`.
 
 1. `layout.tsx` — renders the `<table>` shell and a `..` parent-link row based on the current prefix segments from params.
-2. `page.tsx` — calls `getBucketContent(path)` (path segments joined with `/`, `''` for root) and branches on the response type:
+2. `page.tsx` — decodes the segments (`decodeSegments`), calls `getBucketContent(path)` (joined with `/`, `''` for root) and branches on the response type:
    - `prefix-response` → renders directory rows (subdirectories + objects)
    - `object-response` → `redirect()` to a 60-second presigned S3 URL
    - `not-found` → `notFound()`
@@ -64,6 +64,10 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - Vercel's edge rewrites some URLs before the app sees them, so production differs from `next start`: `%2F` arrives as `/` (an alias for the real path, so `/bold%2Fbold.css` 307s) and `%00` gets a 400 from the edge. Check these cases against production, not just locally.
 - Keys with a hidden segment (`HIDDEN_NAMES`: `.git`, `.env*`, `.htaccess`, …, case-insensitive) are dropped from the cached listings and 404 before any lookup, so uploads don't leak repo history or secrets.
 
+### Links (`src/components/`, `src/key-path.ts`)
+
+- Render folder links with `FolderLink` (`prefetch={false}` + `PendingLabel`, which uses `useLinkStatus`); build key URLs with `keyHref`, the inverse of `decodeSegments`.
+
 ### Environment validation (`src/server-env.ts`)
 
 `SERVER_ENV` is a module-level Zod parse — the app will throw at import time if any required env var is missing, surfacing misconfiguration immediately rather than at request time.
@@ -73,6 +77,6 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - **Next.js 16** with React 19, App Router, RSC throughout. The only client component is `src/components/pending-label.tsx`.
 - **Tailwind CSS v4** via `@tailwindcss/postcss`.
 - **zod** is imported as a namespace only (`import * as z from 'zod'`), enforced by a basic `no-restricted-syntax` rule in `eslint.config.mjs`. Schemas share their type's name (`const Listing` + `interface Listing`). Hot schemas use `z.compile()` (zod ≥ 4.5) with sync `safeParse`/`validate`, since async parses skip the compiled path.
-- **ESLint** config extends `next/core-web-vitals` + `next/typescript` + `prettier/flat`. Run lint before committing.
-- **Prettier** config at `.prettierrc.json`; formatting is enforced via eslint-config-prettier.
+- **ESLint**: `next/core-web-vitals` + `next/typescript` + `typescript-eslint` `strictTypeChecked` (type-aware), with `prettier/flat` turning off style rules. Run lint before committing.
+- **Prettier** (`.prettierrc.json`, with `prettier-plugin-tailwindcss`) isn't run by lint; see the check under Commands.
 - TypeScript strict mode via `@tsconfig/strictest`.
