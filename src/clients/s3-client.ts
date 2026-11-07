@@ -5,12 +5,12 @@ import { cache } from 'react'
 import * as z from 'zod'
 import { SERVER_ENV } from '../server-env'
 
-const listedObjectSchema = z.object({
+const ListedObject = z.object({
   Key: z.string(),
   LastModified: z.iso.datetime(),
   Size: z.number().int().nonnegative(),
 })
-interface ListedObject extends z.infer<typeof listedObjectSchema> {}
+interface ListedObject extends z.infer<typeof ListedObject> {}
 
 interface PrefixEntry {
   prefix: string
@@ -48,17 +48,17 @@ const s3 = new S3Client({
 })
 
 // Compiled: checked on every listing read, once per path segment.
-const listingSchema = z.compile(
+const Listing = z.compile(
   z.object({
     prefixes: z.array(z.string()),
-    objects: z.array(listedObjectSchema),
+    objects: z.array(ListedObject),
     isTruncated: z.boolean(),
   })
 )
-interface Listing extends z.infer<typeof listingSchema> {}
+interface Listing extends z.infer<typeof Listing> {}
 
-// Next keys the cache on the callback's source, not on `listingSchema`: bump this when the schema
-// changes, so old entries aren't read back and rejected.
+// Next keys the cache on the callback's source, not on the `Listing` schema: bump this when the
+// schema changes, so old entries aren't read back and rejected.
 const LISTING_CACHE_VERSION = '1'
 
 // LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
@@ -98,7 +98,7 @@ const listPrefixCached = unstable_cache(
 async function listPrefix(prefix: string): Promise<Listing> {
   const listing = await listPrefixCached(prefix)
   // `validate` checks without copying up to 1000 objects; `parse` only runs to build the error.
-  return listingSchema.validate(listing) ? listing : listingSchema.parse(listing)
+  return Listing.validate(listing) ? listing : Listing.parse(listing)
 }
 
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
