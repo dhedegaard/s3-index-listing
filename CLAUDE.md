@@ -58,6 +58,7 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - `getBucketContent` checks each path segment against its parent's cached listing (`resolveEntry`), so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
 - Known limits: new uploads 404 until the parent listing refreshes (≤1h); under a truncated parent (>1000 entries) a path is "unknown" and costs its own LIST, then falls back to a presigned URL.
 - Next leaves route params percent-encoded (`g%C3%A5tur.png`); `decodeSegments` (`src/key-path.ts`) decodes them once, and 404s a malformed escape, a decoded `/` (`%2F`) or a control character. The walk matches names NFC/NFD-insensitively (`findKey`) and uses the stored key from then on.
+- Vercel's edge rewrites some URLs before the app sees them, so production differs from `next start`: `%2F` arrives as `/` (an alias for the real path, so `/bold%2Fbold.css` 307s) and `%00` gets a 400 from the edge. Check these cases against production, not just locally.
 - Keys with a hidden segment (`HIDDEN_NAMES`: `.git`, `.env*`, `.htaccess`, …, case-insensitive) are dropped from the cached listings and 404 before any lookup, so uploads don't leak repo history or secrets.
 
 ### Environment validation (`src/server-env.ts`)
