@@ -4,6 +4,7 @@ import { RedirectType, notFound, redirect } from 'next/navigation'
 import { memo, use } from 'react'
 import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { NameTd } from '../../components/name-td'
+import { PendingHint } from '../../components/pending-hint'
 
 export async function generateMetadata(
   props: PageProps<'/[[...prefix]]'>,
@@ -41,6 +42,7 @@ const PrefixRenderer = memo<BucketContentResponse>(function PrefixRenderer({ pre
           <NameTd>
             <Link prefetch={false} href={`/${prefix.prefix}`} className="text-blue-800">
               {prefix.label}
+              <PendingHint />
             </Link>
           </NameTd>
           <td></td>

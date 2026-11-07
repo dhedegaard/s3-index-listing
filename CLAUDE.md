@@ -19,7 +19,7 @@ No test suite exists.
 
 - Build without real credentials: `S3_REGION=eu-west-1 S3_BUCKET=x ACCESS_KEY=x SECRET_ACCESS_KEY=x npm run build`.
 - Verify against the real bucket with a production build: `direnv exec . npm run build && direnv exec . npx next start -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
-- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s.
+- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingHint` (`useLinkStatus`) inside each folder `<Link>` instead.
 - `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
 - Vercel project is `p.dhedegaard.dk` (team `d-hedegaard`); the repo has no `.vercel/` link. Hobby keeps request logs 1h and Observability queries need Pro; the app logs nothing, so MCP runtime logs are empty — read requests with `vercel logs --scope d-hedegaard -p p.dhedegaard.dk --since 1h --json`.
 
@@ -66,7 +66,7 @@ The route builds as dynamic, so caching comes only from the S3 client.
 
 ## Tech stack notes
 
-- **Next.js 16** with React 19, App Router, RSC throughout — no client components except where `memo` is used for render optimization.
+- **Next.js 16** with React 19, App Router, RSC throughout. The only client component is `src/components/pending-hint.tsx`.
 - **Tailwind CSS v4** via `@tailwindcss/postcss`.
 - **zod** is imported as a namespace only (`import * as z from 'zod'`), enforced by a basic `no-restricted-syntax` rule in `eslint.config.mjs`. Schemas share their type's name (`const Listing` + `interface Listing`). Hot schemas use `z.compile()` (zod ≥ 4.5) with sync `safeParse`/`validate`, since async parses skip the compiled path.
 - **ESLint** config extends `next/core-web-vitals` + `next/typescript` + `prettier/flat`. Run lint before committing.

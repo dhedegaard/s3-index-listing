@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { use, type ReactNode } from 'react'
 import * as z from 'zod'
 import { NameTd } from '../../components/name-td'
+import { PendingHint } from '../../components/pending-hint'
 
 interface Props extends LayoutProps<'/[[...prefix]]'> {
   children: ReactNode
@@ -51,6 +52,7 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
                 <NameTd>
                   <Link prefetch={false} href={parentPrefix} className="text-blue-800">
                     ..
+                    <PendingHint />
                   </Link>
                 </NameTd>
                 <td></td>
