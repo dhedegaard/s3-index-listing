@@ -22,6 +22,9 @@ No test suite exists.
 - Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingLabel` (`useLinkStatus`) instead; render folder links with `FolderLink`, which carries it and `prefetch={false}`, and build key URLs with `keyHref`, which encodes each segment (its inverse is `decodeSegments`).
 - `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
 - Vercel project is `p.dhedegaard.dk` (team `d-hedegaard`); the repo has no `.vercel/` link. Hobby keeps request logs 1h and Observability queries need Pro; the app logs nothing, so MCP runtime logs are empty — read requests with `vercel logs --scope d-hedegaard -p p.dhedegaard.dk --since 1h --json`.
+- Test `PendingLabel` in headless Chromium against `next start`: delay requests with header `rsc: 1` via Playwright `page.route` to make a navigation slow. Next strips trailing slashes from hrefs (`/bold`, not `/bold/`), so select links accordingly.
+- Run Prettier on the files you touched, not all of `src/`: `name-td.tsx` isn't formatted with the Tailwind plugin, and a blanket run adds an unrelated diff.
+- Inspect the bucket ad hoc with a scratch `.cjs` script using the repo's `@aws-sdk/client-s3` (see the `NODE_PATH` tip in `~/.claude/CLAUDE.md`); a full flat listing costs 1 LIST per 1000 keys (currently 1).
 
 ## Environment variables
 
