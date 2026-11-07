@@ -2,7 +2,7 @@ import { use, type ReactNode } from 'react'
 import * as z from 'zod'
 import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
-import { decodeSegments } from '../../key-path'
+import { displaySegments } from '../../key-path'
 
 interface Props extends LayoutProps<'/[[...prefix]]'> {
   children: ReactNode
@@ -21,9 +21,7 @@ export default function IndexLayout({ children, params: unresolvedParams }: Prop
   if (!paramsResult.success) {
     throw paramsResult.error
   }
-  const rawPrefix = paramsResult.data.prefix ?? []
-  // The page 404s params that don't decode; showing them raw is enough until it does.
-  const prefix = decodeSegments(rawPrefix) ?? rawPrefix
+  const prefix = displaySegments(paramsResult.data.prefix)
   const parentPrefix = prefix.length === 0 ? null : prefix.slice(0, -1).join('/')
 
   return (

@@ -8,18 +8,14 @@ export const keyHref = (key: string): string =>
  * key.
  */
 export function decodeSegments(segments: readonly string[]): string[] | null {
-  const decoded: string[] = []
-  for (const segment of segments) {
-    let value: string
-    try {
-      value = decodeURIComponent(segment)
-    } catch {
-      return null
-    }
-    if (value.includes('/')) {
-      return null
-    }
-    decoded.push(value)
+  try {
+    const decoded = segments.map((segment) => decodeURIComponent(segment))
+    return decoded.some((segment) => segment.includes('/')) ? null : decoded
+  } catch {
+    return null
   }
-  return decoded
 }
+
+// For headings and links around a page that may 404: params that don't decode are shown raw.
+export const displaySegments = (segments: readonly string[] = []): readonly string[] =>
+  decodeSegments(segments) ?? segments

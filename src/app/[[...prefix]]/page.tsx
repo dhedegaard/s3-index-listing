@@ -4,7 +4,7 @@ import { memo, use } from 'react'
 import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
-import { decodeSegments, keyHref } from '../../key-path'
+import { decodeSegments, displaySegments, keyHref } from '../../key-path'
 
 export async function generateMetadata(
   props: PageProps<'/[[...prefix]]'>,
@@ -12,8 +12,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const [params, resolvedParent] = await Promise.all([props.params, parent])
   const parentTitle = resolvedParent.title?.absolute ?? ''
-  const rawPrefix = params.prefix ?? []
-  const prefix = decodeSegments(rawPrefix) ?? rawPrefix
+  const prefix = displaySegments(params.prefix)
 
   return {
     title: `${parentTitle} - ${prefix.length === 0 ? 'Root' : `/${prefix.join('/')}`}`,
