@@ -129,40 +129,67 @@ async function listPrefix(prefix: string): Promise<Listing> {
 
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
 
+interface Entry {
+  kind: EntryKind
+  /** The key as stored, which can differ from the URL in Unicode normalization. */
+  path: string
+}
+
+// macOS tools often upload NFD names (`a` + combining ring), while typed URLs are NFC (`å`). An exact
+// match wins; otherwise a canonically equivalent one is accepted.
+function findKey(keys: readonly string[], wanted: string): string | undefined {
+  if (keys.includes(wanted)) {
+    return wanted
+  }
+  const normalized = wanted.normalize('NFC')
+  return keys.find((key) => key.normalize('NFC') === normalized)
+}
+
 /**
  * Looks up each segment in its parent's listing, so URLs that can't exist (bots, scanners) are
  * rejected from cached listings without a LIST of their own. A truncated listing can't prove
  * absence, hence 'unknown'.
  */
-async function getEntryKind(segments: readonly string[]): Promise<EntryKind> {
+async function resolveEntry(segments: readonly string[]): Promise<Entry> {
   let kind: EntryKind = 'prefix'
   let parentPrefix = ''
   for (const [index, segment] of segments.entries()) {
-    const path = parentPrefix + segment
+    const wanted = parentPrefix + segment
     const { prefixes, objects, isTruncated } = await listPrefix(parentPrefix)
-    if (prefixes.includes(path + '/')) {
+    const folder = findKey(prefixes, wanted + '/')
+    if (folder != null) {
       kind = 'prefix'
-    } else if (objects.some((e) => e.Key === path)) {
-      return index === segments.length - 1 ? 'object' : 'missing'
-    } else if (isTruncated) {
-      kind = 'unknown'
-    } else {
-      return 'missing'
+      parentPrefix = folder
+      continue
     }
-    parentPrefix = path + '/'
+    const object = findKey(
+      objects.map((e) => e.Key),
+      wanted
+    )
+    if (object != null) {
+      return index === segments.length - 1
+        ? ({ kind: 'object', path: object } satisfies Entry)
+        : ({ kind: 'missing', path: wanted } satisfies Entry)
+    }
+    if (!isTruncated) {
+      return { kind: 'missing', path: wanted } satisfies Entry
+    }
+    kind = 'unknown'
+    parentPrefix = wanted + '/'
   }
-  return kind
+  return { kind, path: parentPrefix.slice(0, -1) } satisfies Entry
 }
 
 // Takes the path as a string because React `cache` matches arguments by identity.
 export const getBucketContent = cache(async function getBucketContent(
-  path: string
+  requestedPath: string
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
-  const prefix = path === '' ? '' : path + '/'
-  // The trailing '/' leaves an empty last element; dropping it also gives [] for the root.
   // Listings already drop hidden keys; checking here too keeps a truncated parent ('unknown') from
   // listing or presigning one.
-  const kind = isHiddenKey(path) ? 'missing' : await getEntryKind(prefix.split('/').slice(0, -1))
+  if (isHiddenKey(requestedPath)) {
+    return { type: 'not-found' } satisfies BucketContentNotFoundResponse
+  }
+  const { kind, path } = await resolveEntry(requestedPath === '' ? [] : requestedPath.split('/'))
   if (kind === 'missing') {
     return { type: 'not-found' } satisfies BucketContentNotFoundResponse
   }
@@ -170,6 +197,7 @@ export const getBucketContent = cache(async function getBucketContent(
     return await getObjectResponse(path)
   }
 
+  const prefix = path === '' ? '' : path + '/'
   const { prefixes, objects } = await listPrefix(prefix)
   if (prefixes.length > 0 || objects.length > 0) {
     return {

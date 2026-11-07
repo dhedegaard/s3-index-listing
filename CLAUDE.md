@@ -19,7 +19,7 @@ No test suite exists.
 
 - Build without real credentials: `S3_REGION=eu-west-1 S3_BUCKET=x ACCESS_KEY=x SECRET_ACCESS_KEY=x npm run build`.
 - Verify against the real bucket with a production build: `direnv exec . npm run build && direnv exec . npx next start -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
-- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingLabel` (`useLinkStatus`) instead; render folder links with `FolderLink`, which carries it and `prefetch={false}`, and build key URLs with `keyHref`, which encodes each segment.
+- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingLabel` (`useLinkStatus`) instead; render folder links with `FolderLink`, which carries it and `prefetch={false}`, and build key URLs with `keyHref`, which encodes each segment (its inverse is `decodeSegments`).
 - `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
 - Vercel project is `p.dhedegaard.dk` (team `d-hedegaard`); the repo has no `.vercel/` link. Hobby keeps request logs 1h and Observability queries need Pro; the app logs nothing, so MCP runtime logs are empty — read requests with `vercel logs --scope d-hedegaard -p p.dhedegaard.dk --since 1h --json`.
 
@@ -55,9 +55,9 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - `ListObjectsV2` is billed as an S3 Tier 1 request. Any change that makes one LIST per distinct URL lets bots and scanners drive up the AWS bill.
 - `listPrefix(prefix)` is the only place that lists (`Delimiter: '/'`, one page of 1000). It's wrapped in `unstable_cache` (1h) and caches a JSON-safe projection rather than the SDK output. Reads are checked with the compiled `Listing.validate`; an entry that fails is treated as a miss.
 - Bump `LISTING_CACHE_VERSION` when the `Listing` schema or `fetchListing`'s output changes: Next keys the cache on the callback's source, not on what it calls, so old entries would otherwise be served (or cost an uncached LIST each) until they expire.
-- `getBucketContent` checks each path segment against its parent's cached listing, so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
+- `getBucketContent` checks each path segment against its parent's cached listing (`resolveEntry`), so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
 - Known limits: new uploads 404 until the parent listing refreshes (≤1h); under a truncated parent (>1000 entries) a path is "unknown" and costs its own LIST, then falls back to a presigned URL.
-- `%2F` in a URL stays inside a single segment, so it never matches an S3 key.
+- Next leaves route params percent-encoded (`g%C3%A5tur.png`); `decodeSegments` (`src/key-path.ts`) decodes them once, and 404s a malformed escape, a decoded `/` (`%2F`) or a control character. The walk matches names NFC/NFD-insensitively (`findKey`) and uses the stored key from then on.
 - Keys with a hidden segment (`HIDDEN_NAMES`: `.git`, `.env*`, `.htaccess`, …, case-insensitive) are dropped from the cached listings and 404 before any lookup, so uploads don't leak repo history or secrets.
 
 ### Environment validation (`src/server-env.ts`)
