@@ -4,7 +4,7 @@ import { memo, use } from 'react'
 import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
 import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
-import { keyHref } from '../../key-href'
+import { decodeSegments, keyHref } from '../../key-path'
 
 export async function generateMetadata(
   props: PageProps<'/[[...prefix]]'>,
@@ -12,17 +12,21 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const [params, resolvedParent] = await Promise.all([props.params, parent])
   const parentTitle = resolvedParent.title?.absolute ?? ''
+  const rawPrefix = params.prefix ?? []
+  const prefix = decodeSegments(rawPrefix) ?? rawPrefix
 
   return {
-    title: `${parentTitle} - ${
-      Array.isArray(params.prefix) ? `/${params.prefix.join('/')}` : 'Root'
-    }`,
+    title: `${parentTitle} - ${prefix.length === 0 ? 'Root' : `/${prefix.join('/')}`}`,
   } satisfies Metadata
 }
 
 export default function Index(props: PageProps<'/[[...prefix]]'>) {
   const params = use(props.params)
-  const data = use(getBucketContent(params.prefix?.join('/') ?? ''))
+  const segments = decodeSegments(params.prefix ?? [])
+  if (segments == null) {
+    notFound()
+  }
+  const data = use(getBucketContent(segments.join('/')))
   if (data.type === 'not-found') {
     notFound()
   }

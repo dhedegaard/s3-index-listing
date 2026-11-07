@@ -2,6 +2,7 @@ import { use, type ReactNode } from 'react'
 import * as z from 'zod'
 import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
+import { decodeSegments } from '../../key-path'
 
 interface Props extends LayoutProps<'/[[...prefix]]'> {
   children: ReactNode
@@ -17,21 +18,17 @@ const Params = z.compile(
 export default function IndexLayout({ children, params: unresolvedParams }: Props) {
   const paramsResult = Params.safeParse(use(unresolvedParams))
 
-  const parentPrefix =
-    !paramsResult.success ||
-    paramsResult.data.prefix == null ||
-    paramsResult.data.prefix.length === 0
-      ? null
-      : paramsResult.data.prefix.slice(0, -1).join('/')
-
   if (!paramsResult.success) {
     throw paramsResult.error
   }
-  const { prefix } = paramsResult.data
+  const rawPrefix = paramsResult.data.prefix ?? []
+  // The page 404s params that don't decode; showing them raw is enough until it does.
+  const prefix = decodeSegments(rawPrefix) ?? rawPrefix
+  const parentPrefix = prefix.length === 0 ? null : prefix.slice(0, -1).join('/')
 
   return (
     <main className="mx-auto max-w-5xl px-2">
-      <h1>{prefix == null || prefix.length === 0 ? 'Root' : <>Prefix: {prefix.join('/')}</>}</h1>
+      <h1>{prefix.length === 0 ? 'Root' : <>Prefix: {prefix.join('/')}</>}</h1>
       <hr />
       <div className="w-full overflow-x-auto">
         <table cellSpacing="5" className="w-full">

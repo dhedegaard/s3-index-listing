@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
-import { keyHref } from '../key-href'
+import { keyHref } from '../key-path'
 import { PendingLabel } from './pending-label'
 
 interface FolderLinkProps {
