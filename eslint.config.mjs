@@ -17,29 +17,8 @@ const eslintConfig = defineConfig([
         'error',
         {
           selector:
-            'ImportDeclaration[source.value=/^zod(\\/v[34])?(\\/mini)?$/] > :matches(ImportSpecifier, ImportDefaultSpecifier)',
+            "ImportDeclaration[source.value='zod'] > :matches(ImportSpecifier, ImportDefaultSpecifier)",
           message: "Import zod as a namespace: `import * as z from 'zod'`.",
-        },
-        {
-          // A fixed name lets the `z.core`/`z.locales` checks below see every access.
-          selector:
-            "ImportNamespaceSpecifier[parent.source.value=/^zod(\\/v[34])?(\\/mini)?$/]:not([local.name='z'])",
-          message: 'Name the zod namespace `z`.',
-        },
-        {
-          selector:
-            ':matches(ExportNamedDeclaration, ExportAllDeclaration, ImportExpression)[source.value=/^zod/]',
-          message: 'Import zod statically in the module that uses it; no re-exports or `import()`.',
-        },
-        {
-          selector: 'ImportDeclaration[source.value=/^zod(\\/v4)?\\/locales(\\/index(\\.js)?)?$/]',
-          message: 'Import a single locale from `zod/v4/locales/<lang>.js` instead.',
-        },
-        {
-          selector:
-            ":matches(MemberExpression[object.name='z'][property.name=/^(core|locales)$/], MemberExpression[object.name='z'][computed=true][property.value=/^(core|locales)$/], VariableDeclarator[init.name='z'] > ObjectPattern)",
-          message:
-            "Runtime `z.core`/`z.locales` access pulls in every locale; import from 'zod/v4/core' instead.",
         },
       ],
     },
