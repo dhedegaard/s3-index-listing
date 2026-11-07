@@ -47,7 +47,7 @@ const s3 = new S3Client({
   },
 })
 
-// Compiled: parsed on every listing read, several times per request.
+// Compiled: checked on every listing read, once per path segment.
 const listingSchema = z.compile(
   z.object({
     prefixes: z.array(z.string()),
@@ -57,8 +57,12 @@ const listingSchema = z.compile(
 )
 interface Listing extends z.infer<typeof listingSchema> {}
 
+// Next keys the cache on the callback's source, not on `listingSchema`: bump this when the schema
+// changes, so old entries aren't read back and rejected.
+const LISTING_CACHE_VERSION = '1'
+
 // LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
-// Only a JSON-safe projection is cached; it's parsed on the way out, since the data cache is a
+// Only a JSON-safe projection is cached; it's validated on the way out, since the data cache is a
 // runtime boundary.
 const listPrefixCached = unstable_cache(
   async (prefix: string): Promise<Listing> => {
@@ -87,12 +91,14 @@ const listPrefixCached = unstable_cache(
       isTruncated: IsTruncated === true,
     } satisfies Listing
   },
-  ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET],
+  ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET, LISTING_CACHE_VERSION],
   { revalidate: 3600 }
 )
 
 async function listPrefix(prefix: string): Promise<Listing> {
-  return listingSchema.parse(await listPrefixCached(prefix))
+  const listing = await listPrefixCached(prefix)
+  // `validate` checks without copying up to 1000 objects; `parse` only runs to build the error.
+  return listingSchema.validate(listing) ? listing : listingSchema.parse(listing)
 }
 
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
