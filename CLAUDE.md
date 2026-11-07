@@ -11,8 +11,9 @@ A Next.js 16 (App Router) application that renders an S3 bucket as a browsable d
 ```bash
 npm run dev      # dev server with Turbopack
 npm run build    # production build
-npm run lint     # ESLint (next + prettier)
-npx tsc --noEmit # typecheck (no script for it)
+npm run lint          # ESLint (type-aware)
+npm run typecheck     # next typegen + tsc --noEmit; works without a prior build
+npm run format:check  # Prettier, whole repo (`npm run format` to fix)
 ```
 
 No test suite exists.
@@ -23,7 +24,7 @@ No test suite exists.
 - `next dev` writes a gitignored `AGENTS.md` that only points at the bundled Next 16 docs (`node_modules/next/dist/docs/`), the source of truth for Next APIs here; this file is the project's instructions.
 - Vercel project is `p.dhedegaard.dk` (team `d-hedegaard`); the repo has no `.vercel/` link. Hobby keeps request logs 1h and Observability queries need Pro; the app logs nothing, so MCP runtime logs are empty — read requests with `vercel logs --scope d-hedegaard -p p.dhedegaard.dk --since 1h --json`.
 - Test `PendingLabel` in headless Chromium against `next start`: delay requests with header `rsc: 1` via Playwright `page.route` to make a navigation slow. Next strips trailing slashes from hrefs (`/bold`, not `/bold/`), so select links accordingly.
-- Check formatting with `npx prettier --check src`; lint doesn't enforce it.
+- CI runs build, lint, typecheck and format:check; lint doesn't cover formatting.
 - Inspect the bucket ad hoc with a scratch `.cjs` script using the repo's `@aws-sdk/client-s3` (see the `NODE_PATH` tip in `~/.claude/CLAUDE.md`); a full flat listing costs 1 LIST per 1000 keys (currently 1).
 
 ## Environment variables
@@ -78,5 +79,5 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - **Tailwind CSS v4** via `@tailwindcss/postcss`.
 - **zod** is imported as a namespace only (`import * as z from 'zod'`), enforced by a basic `no-restricted-syntax` rule in `eslint.config.mjs`. Schemas share their type's name (`const Listing` + `interface Listing`). Hot schemas use `z.compile()` (zod ≥ 4.5) with sync `safeParse`/`validate`, since async parses skip the compiled path.
 - **ESLint**: `next/core-web-vitals` + `next/typescript` + `typescript-eslint` `strictTypeChecked` (type-aware), with `prettier/flat` turning off style rules. Run lint before committing.
-- **Prettier** (`.prettierrc.json`, with `prettier-plugin-tailwindcss`) isn't run by lint; see the check under Commands.
+- **Prettier** (`.prettierrc.json`, with `prettier-plugin-tailwindcss`) isn't run by lint; `format:check` covers it. `.prettierignore` skips `.claude/`, which only the global gitignore excludes.
 - TypeScript strict mode via `@tsconfig/strictest`.
