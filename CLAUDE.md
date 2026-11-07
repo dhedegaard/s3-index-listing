@@ -51,7 +51,8 @@ Every URL path is handled by the single catch-all route `src/app/[[...prefix]]/`
 ### S3 client (`src/clients/s3-client.ts`)
 
 - `ListObjectsV2` is billed as an S3 Tier 1 request. Any change that makes one LIST per distinct URL lets bots and scanners drive up the AWS bill.
-- `listPrefix(prefix)` is the only place that lists (`Delimiter: '/'`, one page of 1000). It's wrapped in `unstable_cache` (1h), caches a JSON-safe projection rather than the SDK output, and parses it on read with a `z.compile()`d schema.
+- `listPrefix(prefix)` is the only place that lists (`Delimiter: '/'`, one page of 1000). It's wrapped in `unstable_cache` (1h) and caches a JSON-safe projection rather than the SDK output. Reads are checked with the compiled `Listing.validate`; an entry that fails is treated as a miss.
+- Bump `LISTING_CACHE_VERSION` when the `Listing` schema changes: Next keys the cache on the callback's source, not the schema, so stale entries would otherwise each cost an uncached LIST until they expire.
 - `getBucketContent` checks each path segment against its parent's cached listing, so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
 - Known limits: new uploads 404 until the parent listing refreshes (≤1h); under a truncated parent (>1000 entries) a path is "unknown" and costs its own LIST, then falls back to a presigned URL.
 - `%2F` in a URL stays inside a single segment, so it never matches an S3 key.
@@ -64,7 +65,7 @@ Every URL path is handled by the single catch-all route `src/app/[[...prefix]]/`
 
 - **Next.js 16** with React 19, App Router, RSC throughout — no client components except where `memo` is used for render optimization.
 - **Tailwind CSS v4** via `@tailwindcss/postcss`.
-- **zod** is imported as a namespace only (`import * as z from 'zod'`), enforced by a `no-restricted-syntax` rule in `eslint.config.mjs`. Hot schemas use `z.compile()` (zod ≥ 4.5) and sync `safeParse`, since async parses skip the compiled path.
+- **zod** is imported as a namespace only (`import * as z from 'zod'`), enforced by a basic `no-restricted-syntax` rule in `eslint.config.mjs`. Schemas share their type's name (`const Listing` + `interface Listing`). Hot schemas use `z.compile()` (zod ≥ 4.5) with sync `safeParse`/`validate`, since async parses skip the compiled path.
 - **ESLint** config extends `next/core-web-vitals` + `next/typescript` + `prettier/flat`. Run lint before committing.
 - **Prettier** config at `.prettierrc.json`; formatting is enforced via eslint-config-prettier.
 - TypeScript strict mode via `@tsconfig/strictest`.

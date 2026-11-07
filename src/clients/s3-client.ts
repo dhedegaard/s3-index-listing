@@ -57,48 +57,50 @@ const Listing = z.compile(
 )
 interface Listing extends z.infer<typeof Listing> {}
 
+async function fetchListing(prefix: string): Promise<Listing> {
+  const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
+    new ListObjectsV2Command({
+      Bucket: SERVER_ENV.S3_BUCKET,
+      MaxKeys: 1000,
+      Delimiter: '/',
+      Prefix: prefix,
+    })
+  )
+  return {
+    prefixes: CommonPrefixes?.flatMap((e) => (e.Prefix == null ? [] : [e.Prefix])) ?? [],
+    objects:
+      Contents?.flatMap((e) =>
+        e.Key == null
+          ? []
+          : [
+              {
+                Key: e.Key,
+                LastModified: new Date(e.LastModified ?? 0).toISOString(),
+                Size: e.Size ?? 0,
+              } satisfies ListedObject,
+            ]
+      ) ?? [],
+    isTruncated: IsTruncated === true,
+  } satisfies Listing
+}
+
 // Next keys the cache on the callback's source, not on the `Listing` schema: bump this when the
-// schema changes, so old entries aren't read back and rejected.
+// schema changes, or every old entry falls back to an uncached LIST until it expires.
 const LISTING_CACHE_VERSION = '1'
 
 // LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
 // Only a JSON-safe projection is cached; it's validated on the way out, since the data cache is a
 // runtime boundary.
 const listPrefixCached = unstable_cache(
-  async (prefix: string): Promise<Listing> => {
-    const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
-      new ListObjectsV2Command({
-        Bucket: SERVER_ENV.S3_BUCKET,
-        MaxKeys: 1000,
-        Delimiter: '/',
-        Prefix: prefix,
-      })
-    )
-    return {
-      prefixes: CommonPrefixes?.flatMap((e) => (e.Prefix == null ? [] : [e.Prefix])) ?? [],
-      objects:
-        Contents?.flatMap((e) =>
-          e.Key == null
-            ? []
-            : [
-                {
-                  Key: e.Key,
-                  LastModified: new Date(e.LastModified ?? 0).toISOString(),
-                  Size: e.Size ?? 0,
-                } satisfies ListedObject,
-              ]
-        ) ?? [],
-      isTruncated: IsTruncated === true,
-    } satisfies Listing
-  },
+  fetchListing,
   ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET, LISTING_CACHE_VERSION],
   { revalidate: 3600 }
 )
 
 async function listPrefix(prefix: string): Promise<Listing> {
-  const listing = await listPrefixCached(prefix)
-  // `validate` checks without copying up to 1000 objects; `parse` only runs to build the error.
-  return Listing.validate(listing) ? listing : Listing.parse(listing)
+  const cached = await listPrefixCached(prefix)
+  // A bad cache entry is treated as a miss instead of failing every request until it expires.
+  return Listing.validate(cached) ? cached : await fetchListing(prefix)
 }
 
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
