@@ -4,13 +4,19 @@ import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
 import { SERVER_ENV } from '../server-env'
 
+interface ListedObject {
+  Key: string
+  LastModified: string
+  Size: number
+}
+
 export interface BucketContentResponse {
   type: 'prefix-response'
   region: string
   bucket: string
   prefix: string
   prefixes: Array<{ prefix: string; label: string }>
-  contents: Array<{ Key: string; label: string; LastModified: string; Size: number }>
+  contents: Array<ListedObject & { label: string }>
 }
 
 export interface BucketContentObjectResponse {
@@ -32,7 +38,7 @@ const s3 = new S3Client({
 
 interface Listing {
   prefixes: string[]
-  objects: Array<{ Key: string; LastModified: string; Size: number }>
+  objects: ListedObject[]
   isTruncated: boolean
 }
 
@@ -71,9 +77,6 @@ const listPrefix = cache(
   )
 )
 
-const toPrefix = (segments: readonly string[]) =>
-  segments.length === 0 ? '' : segments.join('/') + '/'
-
 type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
 
 /**
@@ -83,36 +86,29 @@ type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
  */
 async function getEntryKind(segments: readonly string[]): Promise<EntryKind> {
   let kind: EntryKind = 'prefix'
-  for (let depth = 1; depth <= segments.length; depth++) {
-    if (kind === 'object') {
-      return 'missing'
-    }
-    const path = segments.slice(0, depth).join('/')
-    const { prefixes, objects, isTruncated } = await listPrefix(
-      toPrefix(segments.slice(0, depth - 1))
-    )
+  let parentPrefix = ''
+  for (const [index, segment] of segments.entries()) {
+    const path = parentPrefix + segment
+    const { prefixes, objects, isTruncated } = await listPrefix(parentPrefix)
     if (prefixes.includes(path + '/')) {
       kind = 'prefix'
     } else if (objects.some((e) => e.Key === path)) {
-      kind = 'object'
+      return index === segments.length - 1 ? 'object' : 'missing'
     } else if (isTruncated) {
       kind = 'unknown'
     } else {
       return 'missing'
     }
+    parentPrefix = path + '/'
   }
   return kind
 }
 
-// React `cache` matches arguments by identity, so key it on the path string rather than an array.
-export const getBucketContent = (segments: readonly string[]) =>
-  getBucketContentByPath(segments.join('/'))
-
-const getBucketContentByPath = cache(async function getBucketContentByPath(
+// Takes the path as a string because React `cache` matches arguments by identity.
+export const getBucketContent = cache(async function getBucketContent(
   path: string
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
-  const segments = path === '' ? [] : path.split('/')
-  const kind = await getEntryKind(segments)
+  const kind = await getEntryKind(path === '' ? [] : path.split('/'))
   if (kind === 'missing') {
     return { type: 'not-found' } satisfies BucketContentNotFoundResponse
   }
@@ -120,7 +116,7 @@ const getBucketContentByPath = cache(async function getBucketContentByPath(
     return await getObjectResponse(path)
   }
 
-  const prefix = toPrefix(segments)
+  const prefix = path === '' ? '' : path + '/'
   const { prefixes, objects } = await listPrefix(prefix)
   if (prefixes.length > 0 || objects.length > 0) {
     return {
@@ -133,7 +129,7 @@ const getBucketContentByPath = cache(async function getBucketContentByPath(
     } satisfies BucketContentResponse
   }
 
-  // Empty listing under a truncated parent: assume an object, as before.
+  // A truncated parent listing can't rule out an object at this key.
   if (kind === 'unknown') {
     return await getObjectResponse(path)
   }

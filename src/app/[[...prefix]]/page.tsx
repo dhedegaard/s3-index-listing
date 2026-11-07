@@ -24,7 +24,7 @@ export const revalidate = 1800
 
 export default function Index(props: PageProps<'/[[...prefix]]'>) {
   const params = use(props.params)
-  const data = use(getBucketContent(params.prefix ?? []))
+  const data = use(getBucketContent(params.prefix?.join('/') ?? ''))
   if (data.type === 'not-found') {
     notFound()
   }
