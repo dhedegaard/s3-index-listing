@@ -19,7 +19,7 @@ No test suite exists.
 
 - Build without real credentials: `S3_REGION=eu-west-1 S3_BUCKET=x ACCESS_KEY=x SECRET_ACCESS_KEY=x npm run build`.
 - Verify against the real bucket: `direnv exec . npx next dev --turbopack -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
-- Don't add a `loading.tsx` or `<Suspense>` around the page: once a fallback streams, the status is locked at 200, so `notFound()` stops returning 404 (scanners keep crawling) and `redirect()` becomes a JS-only redirect that curl/wget don't follow.
+- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s.
 - `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
 
 ## Environment variables
@@ -47,7 +47,7 @@ Every URL path is handled by the single catch-all route `src/app/[[...prefix]]/`
    - `object-response` → `redirect()` to a 60-second presigned S3 URL
    - `not-found` → `notFound()`
 
-`export const revalidate = 1800` has no effect: the route builds as dynamic, so caching comes only from the S3 client.
+The route builds as dynamic, so caching comes only from the S3 client.
 
 ### S3 client (`src/clients/s3-client.ts`)
 

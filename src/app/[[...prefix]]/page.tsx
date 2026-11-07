@@ -19,9 +19,6 @@ export async function generateMetadata(
   } satisfies Metadata
 }
 
-// Cache for 30 minutes.
-export const revalidate = 1800
-
 export default function Index(props: PageProps<'/[[...prefix]]'>) {
   const params = use(props.params)
   const data = use(getBucketContent(params.prefix?.join('/') ?? ''))
