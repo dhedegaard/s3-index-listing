@@ -57,6 +57,7 @@ The route builds as dynamic, so caching comes only from the S3 client.
 - `getBucketContent` checks each path segment against its parent's cached listing, so a path that doesn't exist 404s without its own LIST. It's wrapped in React `cache` and takes a string, because `cache` compares arguments by identity.
 - Known limits: new uploads 404 until the parent listing refreshes (≤1h); under a truncated parent (>1000 entries) a path is "unknown" and costs its own LIST, then falls back to a presigned URL.
 - `%2F` in a URL stays inside a single segment, so it never matches an S3 key.
+- `.git` segments (`isHiddenSegment`) 404 before any lookup and are left out of listings, so uploaded repos don't leak their history.
 
 ### Environment validation (`src/server-env.ts`)
 

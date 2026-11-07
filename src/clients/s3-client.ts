@@ -130,13 +130,20 @@ async function getEntryKind(segments: readonly string[]): Promise<EntryKind> {
   return kind
 }
 
+// Uploaded repos must not leak their history (and any committed secrets) through the listing.
+const isHiddenSegment = (segment: string): boolean => segment === '.git'
+
 // Takes the path as a string because React `cache` matches arguments by identity.
 export const getBucketContent = cache(async function getBucketContent(
   path: string
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
   const prefix = path === '' ? '' : path + '/'
   // The trailing '/' leaves an empty last element; dropping it also gives [] for the root.
-  const kind = await getEntryKind(prefix.split('/').slice(0, -1))
+  const segments = prefix.split('/').slice(0, -1)
+  if (segments.some(isHiddenSegment)) {
+    return { type: 'not-found' } satisfies BucketContentNotFoundResponse
+  }
+  const kind = await getEntryKind(segments)
   if (kind === 'missing') {
     return { type: 'not-found' } satisfies BucketContentNotFoundResponse
   }
@@ -151,12 +158,16 @@ export const getBucketContent = cache(async function getBucketContent(
       region: SERVER_ENV.S3_REGION,
       bucket: SERVER_ENV.S3_BUCKET,
       prefix,
-      prefixes: prefixes.map(
-        (e) => ({ prefix: e, label: e.slice(prefix.length) }) satisfies PrefixEntry
-      ),
-      contents: objects.map(
-        (e) => ({ ...e, label: e.Key.slice(prefix.length) }) satisfies ContentEntry
-      ),
+      prefixes: prefixes.flatMap((e) => {
+        const label = e.slice(prefix.length)
+        return isHiddenSegment(label.slice(0, -1))
+          ? []
+          : [{ prefix: e, label } satisfies PrefixEntry]
+      }),
+      contents: objects.flatMap((e) => {
+        const label = e.Key.slice(prefix.length)
+        return isHiddenSegment(label) ? [] : [{ ...e, label } satisfies ContentEntry]
+      }),
     } satisfies BucketContentResponse
   }
 
