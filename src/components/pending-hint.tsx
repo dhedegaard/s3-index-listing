@@ -13,7 +13,7 @@ export function PendingHint() {
     <span
       aria-hidden
       className={`ml-1.5 inline-block size-3 rounded-full border-2 border-current border-t-transparent align-middle transition-opacity ${
-        pending ? 'animate-spin opacity-100 delay-150' : 'opacity-0'
+        pending ? 'animate-spin delay-150' : 'opacity-0'
       }`}
     />
   )

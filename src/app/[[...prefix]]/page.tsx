@@ -1,10 +1,9 @@
 import { Metadata, ResolvingMetadata } from 'next'
-import Link from 'next/link'
 import { RedirectType, notFound, redirect } from 'next/navigation'
 import { memo, use } from 'react'
 import { type BucketContentResponse, getBucketContent } from '../../clients/s3-client'
+import { FolderLink } from '../../components/folder-link'
 import { NameTd } from '../../components/name-td'
-import { PendingHint } from '../../components/pending-hint'
 
 export async function generateMetadata(
   props: PageProps<'/[[...prefix]]'>,
@@ -40,10 +39,7 @@ const PrefixRenderer = memo<BucketContentResponse>(function PrefixRenderer({ pre
       {prefixes.map((prefix) => (
         <tr key={`prefix-${prefix.prefix}`}>
           <NameTd>
-            <Link prefetch={false} href={`/${prefix.prefix}`} className="text-blue-800">
-              {prefix.label}
-              <PendingHint />
-            </Link>
+            <FolderLink href={`/${prefix.prefix}`}>{prefix.label}</FolderLink>
           </NameTd>
           <td></td>
           <td align="right"></td>

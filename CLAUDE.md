@@ -19,7 +19,7 @@ No test suite exists.
 
 - Build without real credentials: `S3_REGION=eu-west-1 S3_BUCKET=x ACCESS_KEY=x SECRET_ACCESS_KEY=x npm run build`.
 - Verify against the real bucket with a production build: `direnv exec . npm run build && direnv exec . npx next start -p <port>`, then `curl -s -o /dev/null -w '%{http_code}'`: folders 200, files 307 to a presigned URL, missing paths 404.
-- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingHint` (`useLinkStatus`) inside each folder `<Link>` instead.
+- Don't add `loading.tsx` or `<Suspense>` around the page: a streamed fallback locks the status at 200, so `notFound()` no longer 404s and `redirect()` no longer 307s. Click feedback comes from `PendingHint` (`useLinkStatus`) instead; render folder links with `FolderLink`, which carries it and `prefetch={false}`.
 - `next dev` writes an untracked `AGENTS.md` (Next's agent rules); don't commit it with unrelated work.
 - Vercel project is `p.dhedegaard.dk` (team `d-hedegaard`); the repo has no `.vercel/` link. Hobby keeps request logs 1h and Observability queries need Pro; the app logs nothing, so MCP runtime logs are empty — read requests with `vercel logs --scope d-hedegaard -p p.dhedegaard.dk --since 1h --json`.
 
