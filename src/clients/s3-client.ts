@@ -57,8 +57,26 @@ const Listing = z.compile(
 )
 interface Listing extends z.infer<typeof Listing> {}
 
-// Uploaded repos must not leak their history (and any committed secrets) through the site.
-const isHiddenKey = (key: string): boolean => key.split('/').includes('.git')
+// VCS metadata, secrets and server config that uploads can carry along; none of it is meant to be
+// browsable. Matched case-insensitively, and `.env.local`-style variants count as `.env`.
+const HIDDEN_NAMES = new Set([
+  '.git',
+  '.svn',
+  '.hg',
+  '.bzr',
+  '.env',
+  '.envrc',
+  '.npmrc',
+  '.htaccess',
+  '.htpasswd',
+])
+
+const isHiddenSegment = (segment: string): boolean => {
+  const name = segment.toLowerCase()
+  return HIDDEN_NAMES.has(name) || name.startsWith('.env.')
+}
+
+const isHiddenKey = (key: string): boolean => key.split('/').some(isHiddenSegment)
 
 async function fetchListing(prefix: string): Promise<Listing> {
   const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
