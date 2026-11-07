@@ -57,6 +57,27 @@ const Listing = z.compile(
 )
 interface Listing extends z.infer<typeof Listing> {}
 
+// VCS metadata, secrets and server config that uploads can carry along; none of it is meant to be
+// browsable. Matched case-insensitively, and `.env.local`-style variants count as `.env`.
+const HIDDEN_NAMES = new Set([
+  '.git',
+  '.svn',
+  '.hg',
+  '.bzr',
+  '.env',
+  '.envrc',
+  '.npmrc',
+  '.htaccess',
+  '.htpasswd',
+])
+
+const isHiddenSegment = (segment: string): boolean => {
+  const name = segment.toLowerCase()
+  return HIDDEN_NAMES.has(name) || name.startsWith('.env.')
+}
+
+const isHiddenKey = (key: string): boolean => key.split('/').some(isHiddenSegment)
+
 async function fetchListing(prefix: string): Promise<Listing> {
   const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
     new ListObjectsV2Command({
@@ -67,10 +88,13 @@ async function fetchListing(prefix: string): Promise<Listing> {
     })
   )
   return {
-    prefixes: CommonPrefixes?.flatMap((e) => (e.Prefix == null ? [] : [e.Prefix])) ?? [],
+    prefixes:
+      CommonPrefixes?.flatMap((e) =>
+        e.Prefix == null || isHiddenKey(e.Prefix) ? [] : [e.Prefix]
+      ) ?? [],
     objects:
       Contents?.flatMap((e) =>
-        e.Key == null
+        e.Key == null || isHiddenKey(e.Key)
           ? []
           : [
               {
@@ -84,9 +108,9 @@ async function fetchListing(prefix: string): Promise<Listing> {
   } satisfies Listing
 }
 
-// Next keys the cache on the callback's source, not on the `Listing` schema: bump this when the
-// schema changes, or every old entry falls back to an uncached LIST until it expires.
-const LISTING_CACHE_VERSION = '1'
+// Next keys the cache on the callback's source, not on what it calls: bump this when the `Listing`
+// schema or `fetchListing`'s output changes, or old entries are served (or re-LISTed) until expiry.
+const LISTING_CACHE_VERSION = '2'
 
 // LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
 // Only a JSON-safe projection is cached; it's validated on the way out, since the data cache is a
@@ -136,7 +160,9 @@ export const getBucketContent = cache(async function getBucketContent(
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
   const prefix = path === '' ? '' : path + '/'
   // The trailing '/' leaves an empty last element; dropping it also gives [] for the root.
-  const kind = await getEntryKind(prefix.split('/').slice(0, -1))
+  // Listings already drop hidden keys; checking here too keeps a truncated parent ('unknown') from
+  // listing or presigning one.
+  const kind = isHiddenKey(path) ? 'missing' : await getEntryKind(prefix.split('/').slice(0, -1))
   if (kind === 'missing') {
     return { type: 'not-found' } satisfies BucketContentNotFoundResponse
   }
