@@ -22,61 +22,125 @@ export interface BucketContentNotFoundResponse {
   type: 'not-found'
 }
 
-export const getBucketContent = cache(async function getBucketContent(
-  pathname: string
-): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
-  const region = SERVER_ENV.S3_REGION
-  const Bucket = SERVER_ENV.S3_BUCKET
-  const s3 = new S3Client({
-    region,
-    credentials: {
-      accessKeyId: SERVER_ENV.ACCESS_KEY,
-      secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY,
+const s3 = new S3Client({
+  region: SERVER_ENV.S3_REGION,
+  credentials: {
+    accessKeyId: SERVER_ENV.ACCESS_KEY,
+    secretAccessKey: SERVER_ENV.SECRET_ACCESS_KEY,
+  },
+})
+
+interface Listing {
+  prefixes: string[]
+  objects: Array<{ Key: string; LastModified: string; Size: number }>
+  isTruncated: boolean
+}
+
+// LIST requests are billed as Tier 1, so every distinct prefix is listed at most once an hour.
+// Only a JSON-safe projection is cached, so its type matches what comes back out of the cache.
+const listPrefix = cache(
+  unstable_cache(
+    async (prefix: string): Promise<Listing> => {
+      const { CommonPrefixes, Contents, IsTruncated } = await s3.send(
+        new ListObjectsV2Command({
+          Bucket: SERVER_ENV.S3_BUCKET,
+          MaxKeys: 1000,
+          Delimiter: '/',
+          Prefix: prefix,
+        })
+      )
+      return {
+        prefixes: CommonPrefixes?.flatMap((e) => (e.Prefix == null ? [] : [e.Prefix])) ?? [],
+        objects:
+          Contents?.flatMap((e) =>
+            e.Key == null
+              ? []
+              : [
+                  {
+                    Key: e.Key,
+                    LastModified: new Date(e.LastModified ?? 0).toISOString(),
+                    Size: e.Size ?? 0,
+                  },
+                ]
+          ) ?? [],
+        isTruncated: IsTruncated === true,
+      } satisfies Listing
     },
-  })
-
-  const prefix = pathname.length < 2 ? '' : pathname + '/'
-
-  const { CommonPrefixes, Contents, $metadata } = await unstable_cache(
-    () =>
-      s3.send(new ListObjectsV2Command({ Bucket, MaxKeys: 1000, Delimiter: '/', Prefix: prefix })),
-    ['s3-list-objects-v2', Bucket, prefix],
+    ['s3-list-objects-v2', SERVER_ENV.S3_BUCKET],
     { revalidate: 3600 }
-  )()
+  )
+)
 
-  if (
-    (CommonPrefixes != null && CommonPrefixes.length > 0) ||
-    (Contents != null && Contents.length > 0)
-  ) {
+const toPrefix = (segments: readonly string[]) =>
+  segments.length === 0 ? '' : segments.join('/') + '/'
+
+type EntryKind = 'prefix' | 'object' | 'missing' | 'unknown'
+
+/**
+ * Looks up each segment in its parent's listing, so URLs that can't exist (bots, scanners) are
+ * rejected from cached listings without a LIST of their own. A truncated listing can't prove
+ * absence, hence 'unknown'.
+ */
+async function getEntryKind(segments: readonly string[]): Promise<EntryKind> {
+  let kind: EntryKind = 'prefix'
+  for (let depth = 1; depth <= segments.length; depth++) {
+    if (kind === 'object') {
+      return 'missing'
+    }
+    const path = segments.slice(0, depth).join('/')
+    const { prefixes, objects, isTruncated } = await listPrefix(
+      toPrefix(segments.slice(0, depth - 1))
+    )
+    if (prefixes.includes(path + '/')) {
+      kind = 'prefix'
+    } else if (objects.some((e) => e.Key === path)) {
+      kind = 'object'
+    } else if (isTruncated) {
+      kind = 'unknown'
+    } else {
+      return 'missing'
+    }
+  }
+  return kind
+}
+
+export const getBucketContent = cache(async function getBucketContent(
+  segments: readonly string[]
+): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
+  const kind = await getEntryKind(segments)
+  if (kind === 'missing') {
+    return { type: 'not-found' } satisfies BucketContentNotFoundResponse
+  }
+  if (kind === 'object') {
+    return await getObjectResponse(segments.join('/'))
+  }
+
+  const prefix = toPrefix(segments)
+  const { prefixes, objects } = await listPrefix(prefix)
+  if (prefixes.length > 0 || objects.length > 0) {
     return {
       type: 'prefix-response',
-      region,
-      bucket: Bucket,
+      region: SERVER_ENV.S3_REGION,
+      bucket: SERVER_ENV.S3_BUCKET,
       prefix,
-      prefixes:
-        CommonPrefixes?.map((e) => ({
-          label: e.Prefix?.slice(prefix.length) ?? '',
-          prefix: e.Prefix ?? '',
-        })) ?? [],
-      contents:
-        Contents?.filter((e) => e.Key != null).map((e) => ({
-          ...e,
-          Key: e.Key ?? '',
-          LastModified: new Date(e.LastModified ?? 0).toISOString(),
-          Size: e.Size ?? 0,
-          label: e.Key?.slice(prefix.length) ?? '',
-        })) ?? [],
+      prefixes: prefixes.map((e) => ({ prefix: e, label: e.slice(prefix.length) })),
+      contents: objects.map((e) => ({ ...e, label: e.Key.slice(prefix.length) })),
     } satisfies BucketContentResponse
   }
 
-  // No prefixes or contents found but still a 200 response, so it's probably an object.
-  if ($metadata.httpStatusCode === 200 && pathname.length >= 2) {
-    const signedUrl = await getSignedUrl(s3, new GetObjectCommand({ Bucket, Key: pathname }), {
-      expiresIn: 60,
-    })
-    return { type: 'object-response', signedUrl } satisfies BucketContentObjectResponse
+  // Empty listing under a truncated parent: assume an object, as before.
+  if (kind === 'unknown') {
+    return await getObjectResponse(segments.join('/'))
   }
 
-  // Explicit 404 case.
   return { type: 'not-found' } satisfies BucketContentNotFoundResponse
 })
+
+async function getObjectResponse(key: string): Promise<BucketContentObjectResponse> {
+  const signedUrl = await getSignedUrl(
+    s3,
+    new GetObjectCommand({ Bucket: SERVER_ENV.S3_BUCKET, Key: key }),
+    { expiresIn: 60 }
+  )
+  return { type: 'object-response', signedUrl } satisfies BucketContentObjectResponse
+}
