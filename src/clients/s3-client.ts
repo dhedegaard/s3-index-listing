@@ -104,15 +104,20 @@ async function getEntryKind(segments: readonly string[]): Promise<EntryKind> {
   return kind
 }
 
-export const getBucketContent = cache(async function getBucketContent(
-  segments: readonly string[]
+// React `cache` matches arguments by identity, so key it on the path string rather than an array.
+export const getBucketContent = (segments: readonly string[]) =>
+  getBucketContentByPath(segments.join('/'))
+
+const getBucketContentByPath = cache(async function getBucketContentByPath(
+  path: string
 ): Promise<BucketContentResponse | BucketContentObjectResponse | BucketContentNotFoundResponse> {
+  const segments = path === '' ? [] : path.split('/')
   const kind = await getEntryKind(segments)
   if (kind === 'missing') {
     return { type: 'not-found' } satisfies BucketContentNotFoundResponse
   }
   if (kind === 'object') {
-    return await getObjectResponse(segments.join('/'))
+    return await getObjectResponse(path)
   }
 
   const prefix = toPrefix(segments)
@@ -130,7 +135,7 @@ export const getBucketContent = cache(async function getBucketContent(
 
   // Empty listing under a truncated parent: assume an object, as before.
   if (kind === 'unknown') {
-    return await getObjectResponse(segments.join('/'))
+    return await getObjectResponse(path)
   }
 
   return { type: 'not-found' } satisfies BucketContentNotFoundResponse
